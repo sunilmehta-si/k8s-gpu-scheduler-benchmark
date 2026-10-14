@@ -121,7 +121,37 @@ def kueue_workload(job: Job, speedup: float) -> dict:
     return batch_job(job, speedup, labels={"kueue.x-k8s.io/queue-name": KUEUE_LOCAL_QUEUE})
 
 
-STACKS = {"default": (default_setup, default_workload), "kueue": (kueue_setup, kueue_workload)}
+# Volcano: one Queue per team weighted by its share (proportion plugin), gangs via minAvailable.
+def _volcano_queue(team: str, quotas: dict[str, float]) -> str:
+    return f"gsb-{team}" if quotas else "gsb-shared"
+
+
+def volcano_setup(fleet: Fleet, jobs: list[Job], quotas: dict[str, float]) -> list[dict]:
+    if not quotas:
+        return [{"apiVersion": "scheduling.volcano.sh/v1beta1", "kind": "Queue", "metadata": {"name": "gsb-shared"},
+                 "spec": {"weight": 1}}]
+    return [{"apiVersion": "scheduling.volcano.sh/v1beta1", "kind": "Queue", "metadata": {"name": _volcano_queue(t, quotas)},
+             "spec": {"weight": max(1, round(share * 100))}} for t, share in sorted(quotas.items())]
+
+
+def volcano_workload(job: Job, speedup: float, quotas: dict[str, float] | None = None) -> dict:
+    return {
+        "apiVersion": "batch.volcano.sh/v1alpha1",
+        "kind": "Job",
+        "metadata": {"name": job.id, "namespace": namespace(job.team),
+                     "labels": {"gsb.io/team": job.team, "gsb.io/kind": job.kind},
+                     "annotations": {"gsb.io/arrival-s": str(job.arrival_s)}},
+        "spec": {"schedulerName": "volcano", "queue": _volcano_queue(job.team, quotas or {}),
+                 "minAvailable": job.replicas if job.gang else 1,       # gang: every replica or none
+                 "priorityClassName": priority_class(job.priority), "maxRetry": 0,
+                 "tasks": [{"name": "worker", "replicas": job.replicas,
+                            "template": pod_template(job, speedup, "volcano")}]},
+    }
+
+
+STACKS = {"default": (default_setup, default_workload), "kueue": (kueue_setup, kueue_workload),
+          "volcano": (volcano_setup, volcano_workload)}
+QUOTA_AWARE_WORKLOADS = {"volcano"}   # workload renderers that need the quotas to pick a queue
 
 
 def render(stack: str, fleet: Fleet, jobs: list[Job], quotas: dict[str, float], speedup: float = 1.0,
@@ -135,5 +165,6 @@ def render(stack: str, fleet: Fleet, jobs: list[Job], quotas: dict[str, float], 
     if part in ("all", "setup"):
         docs += common_setup(jobs) + setup_fn(fleet, jobs, quotas)
     if part in ("all", "jobs"):
-        docs += [workload_fn(j, speedup) for j in jobs]
+        docs += [workload_fn(j, speedup, quotas) if stack in QUOTA_AWARE_WORKLOADS else workload_fn(j, speedup)
+                 for j in jobs]
     return docs

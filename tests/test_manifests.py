@@ -75,3 +75,22 @@ class KueueManifestTests(unittest.TestCase):
     def test_jobs_are_labelled_for_their_local_queue(self):
         job = manifests.render("kueue", FLEET, JOBS, {}, part="jobs")[0]
         self.assertEqual(job["metadata"]["labels"]["kueue.x-k8s.io/queue-name"], "gsb-queue")
+
+
+class VolcanoManifestTests(unittest.TestCase):
+    Q = {"research": 0.5, "product": 0.5}
+
+    def test_weighted_team_queues(self):
+        docs = [d for d in manifests.render("volcano", FLEET, JOBS, self.Q, part="setup") if d["kind"] == "Queue"]
+        self.assertEqual([(d["metadata"]["name"], d["spec"]["weight"]) for d in docs],
+                         [("gsb-product", 50), ("gsb-research", 50)])
+        shared = [d for d in manifests.render("volcano", FLEET, JOBS, {}, part="setup") if d["kind"] == "Queue"]
+        self.assertEqual([d["metadata"]["name"] for d in shared], ["gsb-shared"])
+
+    def test_gangs_need_every_replica(self):
+        train, nb = manifests.render("volcano", FLEET, JOBS, self.Q, speedup=60, part="jobs")
+        self.assertEqual((train["apiVersion"], train["kind"]), ("batch.volcano.sh/v1alpha1", "Job"))
+        self.assertEqual((train["spec"]["minAvailable"], train["spec"]["queue"]), (2, "gsb-research"))
+        self.assertEqual(train["spec"]["tasks"][0]["replicas"], 2)
+        self.assertEqual(train["spec"]["tasks"][0]["template"]["spec"]["schedulerName"], "volcano")
+        self.assertEqual(nb["spec"]["minAvailable"], 1)                   # notebooks are not gangs
