@@ -66,6 +66,9 @@ class FairnessTests(unittest.TestCase):
         self.assertEqual(f["teams"]["b"]["max_min"], round(599 / 60, 1))   # b waited for a GPU node
         self.assertEqual(f["teams"]["a"]["served_share"], 1.0)
         self.assertEqual(f["jain_served_share"], 1.0)                       # everyone finished in the end
+        self.assertEqual(f["teams"]["a"]["service"], 1.0)                   # team a never waited
+        self.assertEqual(f["teams"]["b"]["service"], round(600 / (599 + 600), 4))
+        self.assertLess(f["jain_service"], 1.0)                             # ...but team b was delayed
 
     def test_deadlock_shows_up_as_unfair_service(self):
         jobs = [job("g1", replicas=2, gang=True, team="a"), job("g2", replicas=2, gpus=6, gang=True, team="b"),

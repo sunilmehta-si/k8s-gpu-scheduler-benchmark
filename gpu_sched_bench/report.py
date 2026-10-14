@@ -15,10 +15,10 @@ ROWS = [
     ("Stranded GPU-hours", ("stranded_gpu_h",), False, lambda v, m: f"{v:,.1f}"),
     ("Preempted work (GPU-h)", ("preempted_gpu_h",), False, lambda v, m: f"{v:,.1f}"),
     ("GPU-h idle while work waited", ("fragmentation", "idle_while_waiting_gpu_h"), False, lambda v, m: f"{v:,.1f}"),
-    ("Fragmentation A: stranded by size", ("fragmentation", "stranded_by_size"), False, lambda v, m: f"{v:.1%}"),
-    ("Fragmentation C: partial nodes", ("fragmentation", "partial_nodes"), False, lambda v, m: f"{v:.1%}"),
-    ("Fairness (Jain, served share)", ("fairness", "jain_served_share"), True, lambda v, m: "-" if v is None else f"{v:.3f}"),
-    ("Total GPU cost", ("cost", "total"), False, lambda v, m: f"${v:,.0f}"),
+    ("Idle GPUs too small for waiting work", ("fragmentation", "stranded_by_size"), False, lambda v, m: f"{v:.1%}"),
+    ("Partly used nodes (fragmentation)", ("fragmentation", "partial_nodes"), False, lambda v, m: f"{v:.1%}"),
+    ("Fairness between teams (Jain)", ("fairness", "jain_service"), True, lambda v, m: "-" if v is None else f"{v:.3f}"),
+    ("Fleet cost until the last job finished", ("cost", "total"), False, lambda v, m: f"${v:,.0f}"),
     ("Cost per useful GPU-hour", ("cost", "per_useful_gpu_h"), False, lambda v, m: "-" if v is None else f"${v:.2f}"),
 ]
 

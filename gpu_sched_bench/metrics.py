@@ -50,7 +50,8 @@ def fragmentation(result: Result) -> dict:
     """Time-weighted fragmentation under three definitions, because "fragmentation" means different things:
 
     A  stranded_by_size: of the GPUs idle while work waits, the share on nodes with fewer free GPUs than the
-       smallest waiting replica needs. These GPUs are idle *because* of fragmentation: the costly kind.
+       smallest waiting replica needs. It counts both fragmentation (a partly used node) and node shape (a
+       2-GPU node can never host an 8-GPU replica): either way, those GPUs can't serve the waiting work.
     B  scattered_free: the share of free GPUs that sit on partly used nodes (queue-independent).
     C  partial_nodes: the share of nodes that are partly used (structural, node-level).
     Also: idle_while_waiting_gpu_h, GPU-hours left idle while some job was waiting.
@@ -81,7 +82,12 @@ def jain(values: list[float]) -> float | None:
 
 
 def fairness(result: Result) -> dict:
-    """How evenly teams were served: per team, the share of requested GPU-hours that finished, and waits."""
+    """How evenly teams were treated.
+
+    service: per team, the mean of runtime / (wait + runtime) over its jobs (1.0 = nobody waited; a job that
+    never started counts 0). Jain's index over the teams' service says whether some teams were delayed far
+    more than others. served_share (requested GPU-hours that finished) catches starvation and deadlock.
+    """
     teams: dict[str, list] = {}
     for r in result.records.values():
         teams.setdefault(r.job.team, []).append(r)
@@ -90,11 +96,14 @@ def fairness(result: Result) -> dict:
         requested = sum(r.job.gpu_seconds for r in recs)
         served = sum(r.job.gpu_seconds for r in recs if r.end is not None)
         waits = [r.wait for r in recs if r.wait is not None]
+        service = [r.job.duration_s / (r.wait + r.job.duration_s) if r.wait is not None else 0.0 for r in recs]
         per_team[team] = {"jobs": len(recs), "requested_gpu_h": round(requested / 3600, 1),
+                          "service": round(sum(service) / len(service), 4),
                           "served_share": round(served / requested, 4) if requested else 1.0,
                           "never_started": sum(1 for r in recs if r.start is None),
                           "preemptions": sum(r.preemptions for r in recs), **_wait_summary(waits)}
-    return {"jain_served_share": jain([t["served_share"] for t in per_team.values()]), "teams": per_team}
+    return {"jain_service": jain([t["service"] for t in per_team.values()]),
+            "jain_served_share": jain([t["served_share"] for t in per_team.values()]), "teams": per_team}
 
 
 def cost(result: Result) -> dict:
