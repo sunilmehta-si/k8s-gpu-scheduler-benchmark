@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 PLACEMENTS = ("spread", "binpack")
-QUEUES = ("best-effort",)
+QUEUES = ("best-effort", "strict")
 
 
 @dataclass(frozen=True)
@@ -12,7 +12,8 @@ class Policy:
     name: str
     placement: str = "spread"       # spread: most free GPUs first (kube-scheduler's LeastAllocated default);
                                     # binpack: fewest free GPUs that still fit, keeping whole nodes free for big jobs
-    queue: str = "best-effort"      # best-effort: a job that doesn't fit is skipped and later jobs may start
+    queue: str = "best-effort"      # best-effort: a job that doesn't fit is skipped and later jobs may start;
+                                    # strict: nothing behind the head of the queue starts until it does
     gang: bool = False              # all-or-nothing: a gang job's replicas are placed together or not at all
 
     def __post_init__(self):

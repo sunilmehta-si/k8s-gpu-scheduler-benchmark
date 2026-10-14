@@ -86,3 +86,18 @@ class PlacementTests(unittest.TestCase):
     def test_unknown_policy_values_are_rejected(self):
         with self.assertRaises(ValueError):
             Policy("x", placement="random")
+
+
+class QueueTests(unittest.TestCase):
+    JOBS = [job("blocker", duration=50), job("g", replicas=2, gang=True, arrival=1),
+            job("small", gpus=4, arrival=2, duration=10)]
+
+    def test_strict_fifo_blocks_behind_the_head(self):
+        r = simulate(FLEET, self.JOBS, Policy("strict", gang=True, queue="strict"))
+        self.assertEqual(r.records["g"].start, 50)
+        self.assertEqual(r.records["small"].start, 50 + 100)   # waits for the head gang to start and finish
+        # (the gang took both nodes at t=50, so small only fits after it ends)
+
+    def test_best_effort_lets_small_jobs_through(self):
+        r = simulate(FLEET, self.JOBS, Policy("best-effort", gang=True, queue="best-effort"))
+        self.assertEqual(r.records["small"].start, 2)

@@ -126,7 +126,7 @@ class Simulator:
         self._push(self.now + rec.job.duration_s, FINISH, rec.job.id, i)
 
     def _schedule(self) -> None:
-        if self.policy.gang:
+        if self.policy.gang or self.policy.queue == "strict":
             self._schedule_jobs()
         else:
             self._schedule_pods()
@@ -153,23 +153,25 @@ class Simulator:
         return plan
 
     def _schedule_jobs(self) -> None:
-        """Job by job in priority then arrival order; gang jobs are placed all-or-nothing."""
+        """Job by job in priority then arrival order; with gang on, gang jobs are placed all-or-nothing.
+        In a strict queue the first job that can't be fully placed stops the pass (head-of-line blocking)."""
         order = sorted(self.pending, key=lambda j: (-self.records[j].job.priority, self.records[j].job.arrival_s, j))
         for job_id in order:
             rec = self.records[job_id]
-            if rec.job.gang:
+            if rec.job.gang and self.policy.gang:
                 plan = self._fit_all(rec)
-                if plan is None:
-                    continue
-                for i, node in zip([k for k, n in enumerate(rec.nodes) if n is None], plan):
-                    self._place_replica(rec, i, node)
-                continue
-            for i, node in enumerate(rec.nodes):        # independent replicas: as many as fit now
-                if node is None:
-                    choice = self._choose(rec.job.gpus_per_replica, {n.name: n.free for n in self.nodes})
-                    if choice is None:
-                        break
-                    self._place_replica(rec, i, choice)
+                if plan is not None:
+                    for i, node in zip([k for k, n in enumerate(rec.nodes) if n is None], plan):
+                        self._place_replica(rec, i, node)
+            else:
+                for i, node in enumerate(rec.nodes):    # independent replicas: as many as fit now
+                    if node is None:
+                        choice = self._choose(rec.job.gpus_per_replica, {n.name: n.free for n in self.nodes})
+                        if choice is None:
+                            break
+                        self._place_replica(rec, i, choice)
+            if self.policy.queue == "strict" and rec.placed < rec.job.replicas:
+                break
 
     def _schedule_pods(self) -> None:
         """Pod by pod, in kube-scheduler queue order; a pod that doesn't fit is skipped."""
