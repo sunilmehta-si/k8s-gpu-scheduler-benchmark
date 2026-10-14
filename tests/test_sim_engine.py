@@ -66,3 +66,23 @@ class GangTests(unittest.TestCase):
                 job("small", gpus=4, arrival=2, duration=10)]
         r = simulate(FLEET, jobs, Policy("gang", gang=True))
         self.assertEqual(r.records["small"].start, 2)    # best-effort queue: the waiting gang doesn't block it
+
+
+class PlacementTests(unittest.TestCase):
+    def test_binpack_keeps_whole_nodes_free_for_big_jobs(self):
+        small = [job(f"s{i}", gpus=2, duration=100, kind="notebook") for i in range(4)]
+        big = job("big", gpus=8, arrival=1, duration=10)
+        spread = simulate(FLEET, small + [big], Policy("spread", placement="spread"))
+        packed = simulate(FLEET, small + [big], Policy("binpack", placement="binpack"))
+        self.assertEqual(spread.records["big"].start, 100)   # 4 GPUs free on each node: the 8-GPU job can't fit
+        self.assertEqual(packed.records["big"].start, 1)     # the small jobs share one node; the other is empty
+        self.assertEqual(len({packed.records[f"s{i}"].nodes[0] for i in range(4)}), 1)
+
+    def test_binpack_prefers_the_tightest_fit(self):
+        jobs = [job("a", gpus=6, duration=100), job("b", gpus=3, duration=100, arrival=1), job("c", gpus=2, arrival=2)]
+        r = simulate(FLEET, jobs, Policy("binpack", placement="binpack"))
+        self.assertEqual(r.records["c"].nodes[0], r.records["a"].nodes[0])   # 2 GPUs left there: an exact fit
+
+    def test_unknown_policy_values_are_rejected(self):
+        with self.assertRaises(ValueError):
+            Policy("x", placement="random")

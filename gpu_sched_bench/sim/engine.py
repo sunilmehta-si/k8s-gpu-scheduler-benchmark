@@ -107,6 +107,8 @@ class Simulator:
         fits = [n for n in self.nodes if free[n.name] >= need]
         if not fits:
             return None
+        if self.policy.placement == "binpack":     # tightest fit: the busiest node that still has room
+            return min(fits, key=lambda n: (free[n.name] - need, n.name)).name
         # spread: the node with the most free GPUs; ties broken by name for determinism
         return min(fits, key=lambda n: (-free[n.name], n.name)).name
 
