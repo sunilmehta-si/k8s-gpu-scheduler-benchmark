@@ -1,14 +1,17 @@
 """Policy presets that model each scheduling stack's *documented default behaviour*.
 
 These are models, not the schedulers. Each line below names the behaviour and where it comes from, so a
-reader can disagree with a specific choice instead of with a black box. Cluster runs of the real
-schedulers are the check on these models.
+reader can disagree with a specific choice instead of with a black box. Where a behaviour is
+configuration rather than a default, the preset matches what `gsb manifests` generates for that stack,
+so the model and a cluster run describe the same setup. Cluster runs of the real schedulers are the
+check on these models.
 
 - default: kube-scheduler with the NVIDIA device plugin. Pods are scheduled one at a time (no gang),
   NodeResourcesFit scores with LeastAllocated (spread), unschedulable pods are skipped. No quotas.
 - kueue: Kueue admits whole workloads against ClusterQueue quotas (all-or-nothing admission; with
   waitForPodsReady a workload that can't get all its pods is evicted, which this models as gang placement),
-  BestEffortFIFO queueing, cohort borrowing, and reclaimWithinCohort preemption. Pods are then placed by
+  BestEffortFIFO queueing and cohort borrowing. Reclaim is not a Kueue default (reclaimWithinCohort
+  defaults to Never); gsb's ClusterQueues set it to Any, so the preset reclaims. Pods are then placed by
   kube-scheduler, so placement is spread.
 - volcano: gang plugin (minAvailable), binpack plugin, proportion plugin for queue shares with borrowing
   of idle capacity. Reclaim is configurable but off in the default action list, so it is off here.

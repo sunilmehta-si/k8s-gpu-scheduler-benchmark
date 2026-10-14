@@ -78,7 +78,50 @@ def default_workload(job: Job, speedup: float) -> dict:
     return batch_job(job, speedup)
 
 
-STACKS = {"default": (default_setup, default_workload)}
+# Kueue (kueue.x-k8s.io/v1beta2, as documented for Kueue v0.20): one ClusterQueue per team in a shared cohort,
+# BestEffortFIFO, reclaimWithinCohort: Any so a team can take back its nominal quota from borrowers.
+KUEUE_API = "kueue.x-k8s.io/v1beta2"
+KUEUE_FLAVOR = "gsb-gpu"
+KUEUE_LOCAL_QUEUE = "gsb-queue"
+
+
+def _gpu_quotas(fleet: Fleet, jobs: list[Job], quotas: dict[str, float]) -> dict[str, int]:
+    """Whole GPUs per team; without quotas, every team shares one queue sized to the fleet."""
+    if not quotas:
+        return {}
+    return {team: int(share * fleet.total_gpus) for team, share in sorted(quotas.items())}
+
+
+def kueue_setup(fleet: Fleet, jobs: list[Job], quotas: dict[str, float]) -> list[dict]:
+    teams = sorted({j.team for j in jobs})
+    gpus = _gpu_quotas(fleet, jobs, quotas)
+    docs = [{"apiVersion": KUEUE_API, "kind": "ResourceFlavor", "metadata": {"name": KUEUE_FLAVOR},
+             "spec": {"nodeLabels": {"type": "kwok"},
+                      "tolerations": [{"key": KWOK_TAINT["key"], "operator": "Exists", "effect": KWOK_TAINT["effect"]}]}}]
+    queues = {t: (f"gsb-{t}", gpus.get(t, 0)) for t in teams} if gpus else {t: ("gsb-shared", fleet.total_gpus) for t in teams}
+    for name, nominal in sorted(set(queues.values())):
+        team_selector = [t for t, (q, _) in queues.items() if q == name]
+        docs.append({"apiVersion": KUEUE_API, "kind": "ClusterQueue", "metadata": {"name": name},
+                     "spec": {"cohortName": "gsb",
+                              "namespaceSelector": {"matchExpressions": [{"key": "gsb.io/team", "operator": "In",
+                                                                          "values": team_selector}]},
+                              "queueingStrategy": "BestEffortFIFO",
+                              "resourceGroups": [{"coveredResources": ["nvidia.com/gpu"],
+                                                  "flavors": [{"name": KUEUE_FLAVOR,
+                                                               "resources": [{"name": "nvidia.com/gpu", "nominalQuota": nominal}]}]}],
+                              "preemption": {"reclaimWithinCohort": "Any", "withinClusterQueue": "LowerPriority"}}})
+    for t in teams:
+        docs.append({"apiVersion": KUEUE_API, "kind": "LocalQueue",
+                     "metadata": {"name": KUEUE_LOCAL_QUEUE, "namespace": namespace(t)},
+                     "spec": {"clusterQueue": queues[t][0]}})
+    return docs
+
+
+def kueue_workload(job: Job, speedup: float) -> dict:
+    return batch_job(job, speedup, labels={"kueue.x-k8s.io/queue-name": KUEUE_LOCAL_QUEUE})
+
+
+STACKS = {"default": (default_setup, default_workload), "kueue": (kueue_setup, kueue_workload)}
 
 
 def render(stack: str, fleet: Fleet, jobs: list[Job], quotas: dict[str, float], speedup: float = 1.0,

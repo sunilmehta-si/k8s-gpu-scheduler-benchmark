@@ -49,3 +49,29 @@ class CommonManifestTests(unittest.TestCase):
         with redirect_stderr(io.StringIO()):
             self.assertEqual(main(["manifests", "--stack", "slurm", "--fleet", str(ROOT / "fleets/lab-32.yaml"),
                                    "--trace", str(ROOT / "traces/lab-32-8h.jsonl")]), 2)
+
+
+class KueueManifestTests(unittest.TestCase):
+    def test_team_queues_in_a_cohort_with_reclaim(self):
+        docs = manifests.render("kueue", FLEET, JOBS, {"research": 0.5, "product": 0.5}, part="setup")
+        cqs = [d for d in docs if d["kind"] == "ClusterQueue"]
+        self.assertEqual([d["metadata"]["name"] for d in cqs], ["gsb-product", "gsb-research"])
+        spec = cqs[1]["spec"]
+        self.assertEqual(cqs[1]["apiVersion"], "kueue.x-k8s.io/v1beta2")
+        self.assertEqual((spec["cohortName"], spec["queueingStrategy"]), ("gsb", "BestEffortFIFO"))
+        self.assertEqual(spec["resourceGroups"][0]["flavors"][0]["resources"], [{"name": "nvidia.com/gpu", "nominalQuota": 16}])
+        self.assertEqual(spec["preemption"]["reclaimWithinCohort"], "Any")
+        self.assertEqual(spec["namespaceSelector"]["matchExpressions"][0]["values"], ["research"])
+        lqs = [d for d in docs if d["kind"] == "LocalQueue"]
+        self.assertEqual({(d["metadata"]["namespace"], d["spec"]["clusterQueue"]) for d in lqs},
+                         {("gsb-product", "gsb-product"), ("gsb-research", "gsb-research")})
+
+    def test_without_quotas_one_shared_queue(self):
+        docs = manifests.render("kueue", FLEET, JOBS, {}, part="setup")
+        cqs = [d for d in docs if d["kind"] == "ClusterQueue"]
+        self.assertEqual(len(cqs), 1)
+        self.assertEqual(cqs[0]["spec"]["resourceGroups"][0]["flavors"][0]["resources"][0]["nominalQuota"], 32)
+
+    def test_jobs_are_labelled_for_their_local_queue(self):
+        job = manifests.render("kueue", FLEET, JOBS, {}, part="jobs")[0]
+        self.assertEqual(job["metadata"]["labels"]["kueue.x-k8s.io/queue-name"], "gsb-queue")
