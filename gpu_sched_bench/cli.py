@@ -31,7 +31,40 @@ def _parser() -> argparse.ArgumentParser:
     st = tsub.add_parser("stats", help="Summarise a trace: jobs and GPU-hours by kind and team.")
     st.add_argument("trace", help="Trace JSONL file.")
     st.add_argument("--fleet", help="Also show demand as a share of this fleet's capacity.")
+    sim = sub.add_parser("simulate", help="Run every stack's reference model on a fleet and trace; write results JSON.")
+    sim.add_argument("--fleet", required=True, help="Fleet YAML file.")
+    sim.add_argument("--trace", required=True, help="Trace JSONL file.")
+    sim.add_argument("--stacks", default="default,kueue,volcano,kai", help="Comma-separated stacks (default: all).")
+    sim.add_argument("--quotas", choices=("equal", "none"), default="equal",
+                     help="Team quotas for stacks that support them: an equal share per team, or none (default: equal).")
+    sim.add_argument("--output", "-o", help="Write results JSON here instead of stdout.")
     return p
+
+
+def _cmd_simulate(args: argparse.Namespace) -> int:
+    from . import results
+    from .fleet import FleetError, load as load_fleet
+    from .presets import STACKS
+    from .trace import TraceError, check_fits, load as load_trace
+    stacks = [s.strip() for s in args.stacks.split(",") if s.strip()]
+    unknown = [s for s in stacks if s not in STACKS]
+    if unknown:
+        print(f"gsb: unknown stack(s) {', '.join(unknown)}; choose from {', '.join(STACKS)}", file=sys.stderr)
+        return 2
+    try:
+        fleet = load_fleet(args.fleet)
+        jobs = load_trace(args.trace)
+        check_fits(jobs, fleet.max_gpus_per_node)
+    except (FleetError, TraceError, OSError) as exc:
+        print(f"gsb: {exc}", file=sys.stderr)
+        return 2
+    text = results.dumps(results.run(fleet, jobs, stacks, args.quotas, trace_name=Path(args.trace).name))
+    if args.output:
+        Path(args.output).write_text(text)
+        print(f"gsb: wrote results for {', '.join(stacks)} to {args.output}", file=sys.stderr)
+    else:
+        print(text, end="")
+    return 0
 
 
 def _cmd_trace(args: argparse.Namespace) -> int:
@@ -85,6 +118,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_fleet(args)
     if args.command == "trace":
         return _cmd_trace(args)
+    if args.command == "simulate":
+        return _cmd_simulate(args)
     return 0
 
 
