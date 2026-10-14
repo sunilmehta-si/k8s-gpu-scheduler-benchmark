@@ -51,3 +51,25 @@ class FragmentationTests(unittest.TestCase):
     def test_empty_fleet_time_is_not_fragmented(self):
         m = metrics.fragmentation(simulate(FLEET, [job("a", gpus=8)], Policy("default")))
         self.assertEqual((m["stranded_by_size"], m["scattered_free"], m["partial_nodes"]), (0.0, 0.0, 0.0))
+
+
+class FairnessTests(unittest.TestCase):
+    def test_jain_index(self):
+        self.assertEqual(metrics.jain([1, 1, 1]), 1.0)
+        self.assertEqual(metrics.jain([1, 0, 0, 0]), 0.25)
+        self.assertIsNone(metrics.jain([]))
+
+    def test_per_team_service_and_waits(self):
+        jobs = [job("a1", team="a"), job("a2", team="a"), job("b1", team="b", arrival=1)]
+        f = metrics.fairness(simulate(FLEET, jobs, Policy("default")))
+        self.assertEqual(f["teams"]["a"]["jobs"], 2)
+        self.assertEqual(f["teams"]["b"]["max_min"], round(599 / 60, 1))   # b waited for a GPU node
+        self.assertEqual(f["teams"]["a"]["served_share"], 1.0)
+        self.assertEqual(f["jain_served_share"], 1.0)                       # everyone finished in the end
+
+    def test_deadlock_shows_up_as_unfair_service(self):
+        jobs = [job("g1", replicas=2, gang=True, team="a"), job("g2", replicas=2, gpus=6, gang=True, team="b"),
+                job("n", gpus=2, team="c", kind="notebook", arrival=5)]
+        f = metrics.fairness(simulate(FLEET, jobs, Policy("default")))
+        self.assertEqual(f["teams"]["a"]["never_started"], 1)
+        self.assertLess(f["jain_served_share"], 1.0)

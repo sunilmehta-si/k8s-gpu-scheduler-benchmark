@@ -71,3 +71,27 @@ def fragmentation(result: Result) -> dict:
         "scattered_free": round(free_partial / free_total, 4) if free_total else 0.0,
         "partial_nodes": round(partial_nodes / node_time, 4) if node_time else 0.0,
     }
+
+
+def jain(values: list[float]) -> float | None:
+    """Jain's fairness index: 1.0 when all values are equal, 1/n when one gets everything."""
+    if not values or not any(values):
+        return None
+    return round(sum(values) ** 2 / (len(values) * sum(v * v for v in values)), 4)
+
+
+def fairness(result: Result) -> dict:
+    """How evenly teams were served: per team, the share of requested GPU-hours that finished, and waits."""
+    teams: dict[str, list] = {}
+    for r in result.records.values():
+        teams.setdefault(r.job.team, []).append(r)
+    per_team = {}
+    for team, recs in sorted(teams.items()):
+        requested = sum(r.job.gpu_seconds for r in recs)
+        served = sum(r.job.gpu_seconds for r in recs if r.end is not None)
+        waits = [r.wait for r in recs if r.wait is not None]
+        per_team[team] = {"jobs": len(recs), "requested_gpu_h": round(requested / 3600, 1),
+                          "served_share": round(served / requested, 4) if requested else 1.0,
+                          "never_started": sum(1 for r in recs if r.start is None),
+                          "preemptions": sum(r.preemptions for r in recs), **_wait_summary(waits)}
+    return {"jain_served_share": jain([t["served_share"] for t in per_team.values()]), "teams": per_team}
