@@ -38,7 +38,27 @@ def _parser() -> argparse.ArgumentParser:
     sim.add_argument("--quotas", choices=("equal", "none"), default="equal",
                      help="Team quotas for stacks that support them: an equal share per team, or none (default: equal).")
     sim.add_argument("--output", "-o", help="Write results JSON here instead of stdout.")
+    rp = sub.add_parser("report", help="Render one or more results JSON files as a Markdown comparison.")
+    rp.add_argument("results", nargs="+", help="Results JSON files from gsb simulate.")
+    rp.add_argument("--output", "-o", help="Write Markdown here instead of stdout.")
     return p
+
+
+def _cmd_report(args: argparse.Namespace) -> int:
+    import json
+
+    from .report import to_markdown
+    try:
+        parts = [to_markdown(json.loads(Path(f).read_text())) for f in args.results]
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"gsb: cannot read results: {exc}", file=sys.stderr)
+        return 2
+    text = "\n".join(parts)
+    if args.output:
+        Path(args.output).write_text(text)
+    else:
+        print(text, end="")
+    return 0
 
 
 def _cmd_simulate(args: argparse.Namespace) -> int:
@@ -120,6 +140,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_trace(args)
     if args.command == "simulate":
         return _cmd_simulate(args)
+    if args.command == "report":
+        return _cmd_report(args)
     return 0
 
 
