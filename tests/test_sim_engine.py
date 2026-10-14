@@ -1,0 +1,47 @@
+import unittest
+
+from gpu_sched_bench.fleet import parse
+from gpu_sched_bench.sim import Policy, simulate
+from gpu_sched_bench.trace import Job
+
+FLEET = parse({"name": "t", "pools": [{"name": "n", "count": 2, "gpus_per_node": 8}]})
+
+
+def job(id, arrival=0, replicas=1, gpus=8, duration=100, gang=False, priority=0, kind="training", team="a"):
+    return Job(id, arrival, team, kind, replicas, gpus, duration, priority, gang)
+
+
+class EngineTests(unittest.TestCase):
+    def test_jobs_queue_when_full_and_start_when_capacity_frees(self):
+        r = simulate(FLEET, [job("a"), job("b"), job("c", arrival=10)], Policy("default"))
+        self.assertEqual((r.records["a"].start, r.records["b"].start), (0, 0))
+        self.assertEqual(r.records["c"].start, 100)         # waited for a or b to finish
+        self.assertEqual(r.records["c"].wait, 90)
+        self.assertEqual(r.makespan, 200)
+        self.assertEqual(r.allocated_gpu_s, 16 * 100 + 8 * 100)
+        self.assertFalse(r.deadlocked)
+
+    def test_spread_placement_uses_the_emptiest_node(self):
+        r = simulate(FLEET, [job("a", gpus=2), job("b", gpus=2)], Policy("default"))
+        self.assertNotEqual(r.records["a"].nodes[0], r.records["b"].nodes[0])
+
+    def test_pod_by_pod_gangs_interleave_and_deadlock(self):
+        # Submitted together, the pods interleave: g1-0 takes node A, g2-0 takes most of node B, and then
+        # neither g1-1 (8 GPUs) nor g2-1 (6 GPUs) fits anywhere. Both gangs hold GPUs forever.
+        r = simulate(FLEET, [job("g1", replicas=2, gang=True), job("g2", replicas=2, gpus=6, gang=True)], Policy("default"))
+        self.assertTrue(r.deadlocked)
+        self.assertEqual(r.unfinished, ["g1", "g2"])
+        self.assertEqual((r.records["g1"].placed, r.records["g2"].placed), (1, 1))
+
+    def test_partially_placed_gang_strands_gpus_until_complete(self):
+        r = simulate(FLEET, [job("blocker", duration=50), job("g", replicas=2, gang=True, arrival=1)], Policy("default"))
+        self.assertEqual(r.records["g"].start, 50)            # one replica waited 49 s for the other node
+        self.assertEqual(r.stranded_gpu_s, 8 * 49)
+
+    def test_independent_replicas_start_as_soon_as_placed(self):
+        r = simulate(FLEET, [job("big", gpus=8, duration=50), job("inf", replicas=3, gpus=8, kind="inference")],
+                     Policy("default"))
+        starts = sorted(r.records["inf"].replica_start)
+        self.assertEqual(starts, [0, 50, 100])               # each replica works as soon as it has a node
+        self.assertEqual(r.records["inf"].start, 100)
+        self.assertEqual(r.stranded_gpu_s, 0)                # independent replicas are never stranded
