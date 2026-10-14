@@ -121,3 +121,26 @@ class QuotaTests(unittest.TestCase):
             Policy("bad", quotas={"a": 0.7, "b": 0.6})
         with self.assertRaises(ValueError):
             Policy("bad", borrowing=True)
+
+
+class ReclaimTests(unittest.TestCase):
+    POLICY = Policy("reclaim", gang=True, quotas={"a": 0.5, "b": 0.5}, borrowing=True, reclaim=True)
+
+    def test_owner_reclaims_borrowed_quota(self):
+        jobs = [job("a1", team="a"), job("a2", team="a", arrival=1), job("b1", team="b", arrival=30)]
+        r = simulate(FLEET, jobs, self.POLICY)
+        self.assertEqual(r.records["b1"].start, 30)               # took its quota back immediately
+        self.assertEqual(r.records["a2"].preemptions, 1)          # the borrower was evicted...
+        self.assertEqual(r.records["a2"].start, 100)              # ...and restarted when a1 finished
+        self.assertEqual(r.preempted_gpu_s, 8 * 29)               # 29 s of a2's work on 8 GPUs was lost
+        self.assertEqual(r.records["a2"].end, 200)                # it ran its full duration again
+
+    def test_jobs_within_quota_are_never_evicted(self):
+        jobs = [job("a1", team="a"), job("b1", team="b"), job("b2", team="b", arrival=1)]
+        r = simulate(FLEET, jobs, self.POLICY)
+        self.assertEqual(r.records["a1"].preemptions, 0)          # team a is inside its quota
+        self.assertEqual(r.records["b2"].start, 100)
+
+    def test_reclaim_requires_borrowing(self):
+        with self.assertRaises(ValueError):
+            Policy("bad", quotas={"a": 1.0}, reclaim=True)

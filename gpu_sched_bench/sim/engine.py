@@ -36,6 +36,8 @@ class JobRecord:
     replica_start: list[float | None] = field(default_factory=list)
     replica_end: list[float | None] = field(default_factory=list)
     held_since: list[float | None] = field(default_factory=list)  # placed but waiting for the rest of its gang
+    epoch: int = 0                                                 # bumped on preemption; stale finishes are ignored
+    preemptions: int = 0
 
     @property
     def placed(self) -> int:
@@ -63,6 +65,7 @@ class Result:
     makespan: float
     allocated_gpu_s: float = 0.0     # GPU-seconds held by placed replicas (working or stranded)
     stranded_gpu_s: float = 0.0      # GPU-seconds held by gang replicas waiting for the rest of their gang
+    preempted_gpu_s: float = 0.0     # GPU-seconds of work thrown away by preemption (jobs restart from scratch)
     deadlocked: bool = False         # partial gangs blocked each other and nothing could ever finish
     samples: list[tuple[float, float, list[int]]] = field(default_factory=list)  # (time, dt, free GPUs per node)
 
@@ -79,19 +82,19 @@ class Simulator:
         self.records = {j.id: JobRecord(j, [None] * j.replicas, [None] * j.replicas, [None] * j.replicas,
                                         [None] * j.replicas) for j in jobs}
         self.pending: list[str] = []
-        self.events: list[tuple[float, int, int, str, int]] = []
+        self.events: list[tuple[float, int, int, str, int, int]] = []
         self._seq = 0
         for j in jobs:
-            self._push(j.arrival_s, ARRIVAL, j.id, -1)
+            self._push(j.arrival_s, ARRIVAL, j.id, -1, 0)
         self.now = 0.0
         self.nominal = {team: int(share * fleet.total_gpus) for team, share in policy.quotas.items()}
         self.usage: dict[str, int] = {}
-        self.allocated_gpu_s = self.stranded_gpu_s = 0.0
+        self.allocated_gpu_s = self.stranded_gpu_s = self.preempted_gpu_s = 0.0
         self.samples: list[tuple[float, float, list[int]]] = []
 
-    def _push(self, t: float, kind: int, job_id: str, replica: int) -> None:
+    def _push(self, t: float, kind: int, job_id: str, replica: int, epoch: int) -> None:
         self._seq += 1
-        heapq.heappush(self.events, (t, self._seq, kind, job_id, replica))
+        heapq.heappush(self.events, (t, self._seq, kind, job_id, replica, epoch))
 
     # -- accounting -------------------------------------------------------------------------------
     def _advance(self, t: float) -> None:
@@ -142,7 +145,7 @@ class Simulator:
     def _start(self, rec: JobRecord, i: int) -> None:
         rec.held_since[i] = None
         rec.replica_start[i] = self.now
-        self._push(self.now + rec.job.duration_s, FINISH, rec.job.id, i)
+        self._push(self.now + rec.job.duration_s, FINISH, rec.job.id, i, rec.epoch)
 
     def _schedule(self) -> None:
         if self.policy.gang or self.policy.queue == "strict" or self.nominal:
@@ -157,9 +160,9 @@ class Simulator:
                     for i in range(rec.job.replicas):
                         self._start(rec, i)
 
-    def _fit_all(self, rec: JobRecord) -> list[str] | None:
+    def _fit_all(self, rec: JobRecord, free: dict[str, int] | None = None) -> list[str] | None:
         """A node for every unplaced replica at once, or None: placement is decided on a copy of the free map."""
-        free = {n.name: n.free for n in self.nodes}
+        free = dict(free) if free is not None else {n.name: n.free for n in self.nodes}
         plan = []
         for i, node in enumerate(rec.nodes):
             if node is not None:
@@ -171,6 +174,48 @@ class Simulator:
             plan.append(choice)
         return plan
 
+    def _preempt(self, rec: JobRecord) -> None:
+        """Evict a job: free its GPUs, discard its progress, and queue it again."""
+        for i, node in enumerate(rec.nodes):
+            if node is None:
+                continue
+            self.by_name[node].free += rec.job.gpus_per_replica
+            self.usage[rec.job.team] -= rec.job.gpus_per_replica
+            if rec.replica_start[i] is not None and rec.replica_end[i] is None:
+                self.preempted_gpu_s += (self.now - rec.replica_start[i]) * rec.job.gpus_per_replica
+        n = rec.job.replicas
+        rec.nodes, rec.replica_start, rec.replica_end, rec.held_since = [None] * n, [None] * n, [None] * n, [None] * n
+        rec.epoch += 1
+        rec.preemptions += 1
+        self.pending.append(rec.job.id)
+
+    def _reclaim_for(self, rec: JobRecord, need: int, fits) -> bool:
+        """Evict borrowers (lowest priority, most recently started first) until `rec` is admissible and fits.
+        Only jobs of teams above their nominal quota are victims, and only while their team stays above it.
+        Nothing is evicted unless the full set of evictions would let `rec` start."""
+        team = rec.job.team
+        if self.usage.get(team, 0) + need > self.nominal.get(team, 0):
+            return False                               # reclaim only restores a team's own quota
+        candidates = [r for r in self.records.values()
+                      if r.placed and r.end is None and r.job.id not in self.pending and r.job.team != team]
+        candidates.sort(key=lambda r: (r.job.priority, -(r.start or 0), r.job.id))
+        free = {n.name: n.free for n in self.nodes}
+        usage = dict(self.usage)
+        victims = []
+        for v in candidates:
+            if usage.get(v.job.team, 0) <= self.nominal.get(v.job.team, 0):
+                continue                               # that team is not borrowing (any more): leave it alone
+            victims.append(v)
+            usage[v.job.team] -= sum(v.job.gpus_per_replica for x in v.nodes if x is not None)
+            for x in v.nodes:
+                if x is not None:
+                    free[x] += v.job.gpus_per_replica
+            if fits(free):
+                for victim in victims:
+                    self._preempt(victim)
+                return True
+        return False
+
     def _schedule_jobs(self) -> None:
         """Job by job in priority then arrival order; with gang on, gang jobs are placed all-or-nothing.
         In a strict queue the first job that can't be fully placed stops the pass (head-of-line blocking)."""
@@ -179,16 +224,23 @@ class Simulator:
             rec = self.records[job_id]
             if rec.job.gang and self.policy.gang:
                 unplaced = sum(1 for n in rec.nodes if n is None)
-                plan = self._fit_all(rec) if self._admissible(rec.job.team, unplaced * rec.job.gpus_per_replica) else None
+                need = unplaced * rec.job.gpus_per_replica
+                plan = self._fit_all(rec) if self._admissible(rec.job.team, need) else None
+                if plan is None and self.policy.reclaim and \
+                        self._reclaim_for(rec, need, lambda free: self._fit_all(rec, free) is not None):
+                    plan = self._fit_all(rec)
                 if plan is not None:
                     for i, node in zip([k for k, n in enumerate(rec.nodes) if n is None], plan):
                         self._place_replica(rec, i, node)
             else:
                 for i, node in enumerate(rec.nodes):    # independent replicas: as many as fit now
                     if node is None:
-                        if not self._admissible(rec.job.team, rec.job.gpus_per_replica):
-                            break
-                        choice = self._choose(rec.job.gpus_per_replica, {n.name: n.free for n in self.nodes})
+                        need = rec.job.gpus_per_replica
+                        current = {n.name: n.free for n in self.nodes}
+                        choice = self._choose(need, current) if self._admissible(rec.job.team, need) else None
+                        if choice is None and self.policy.reclaim and \
+                                self._reclaim_for(rec, need, lambda free: self._choose(need, free) is not None):
+                            choice = self._choose(need, {n.name: n.free for n in self.nodes})
                         if choice is None:
                             break
                         self._place_replica(rec, i, choice)
@@ -213,8 +265,10 @@ class Simulator:
             t = self.events[0][0]
             self._advance(t)
             while self.events and self.events[0][0] == t:
-                _, _, kind, job_id, replica = heapq.heappop(self.events)
+                _, _, kind, job_id, replica, epoch = heapq.heappop(self.events)
                 rec = self.records[job_id]
+                if kind == FINISH and epoch != rec.epoch:
+                    continue                           # the replica was preempted before it finished
                 if kind == ARRIVAL:
                     self.pending.append(job_id)
                 else:
@@ -225,7 +279,8 @@ class Simulator:
             if not self.events and self.pending:
                 deadlocked = True      # nothing will ever finish, and what is pending can never be placed
         return Result(self.policy, self.fleet, self.records, makespan=self.now, allocated_gpu_s=self.allocated_gpu_s,
-                      stranded_gpu_s=self.stranded_gpu_s, deadlocked=deadlocked, samples=self.samples)
+                      stranded_gpu_s=self.stranded_gpu_s, preempted_gpu_s=self.preempted_gpu_s, deadlocked=deadlocked,
+                      samples=self.samples)
 
 
 def simulate(fleet: Fleet, jobs: list[Job], policy: Policy) -> Result:

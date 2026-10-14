@@ -17,6 +17,7 @@ class Policy:
     gang: bool = False              # all-or-nothing: a gang job's replicas are placed together or not at all
     quotas: dict[str, float] = field(default_factory=dict)  # team -> guaranteed share of the fleet's GPUs
     borrowing: bool = False         # a team may use other teams' unused quota (Kueue cohorts, KAI/Volcano queues)
+    reclaim: bool = False           # a team within its quota evicts borrowers to get its GPUs back
 
     def __post_init__(self):
         if self.placement not in PLACEMENTS:
@@ -27,3 +28,5 @@ class Policy:
             raise ValueError("quota shares must be >= 0 and add up to at most 1.0")
         if self.borrowing and not self.quotas:
             raise ValueError("borrowing needs quotas")
+        if self.reclaim and not self.borrowing:
+            raise ValueError("reclaim needs borrowing (there is nothing to reclaim otherwise)")
