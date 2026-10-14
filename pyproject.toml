@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "k8s-gpu-scheduler-benchmark"
+dynamic = ["version"]
+description = "Benchmark Kubernetes GPU schedulers (default, Kueue, Volcano, KAI) on identical AI workload traces and a simulated GPU fleet. No GPUs needed."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Sunil Mehta" }]
+keywords = ["kubernetes", "gpu", "scheduler", "benchmark", "kueue", "volcano", "kai-scheduler", "mlops", "finops", "kwok"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Topic :: System :: Distributed Computing",
+  "Topic :: System :: Benchmark",
+  "Environment :: Console",
+]
+dependencies = ["PyYAML>=6.0"]
+
+[project.urls]
+Homepage = "https://github.com/sunilmehta-si/k8s-gpu-scheduler-benchmark"
+
+[project.scripts]
+gsb = "gpu_sched_bench.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "gpu_sched_bench.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["gpu_sched_bench*"]
