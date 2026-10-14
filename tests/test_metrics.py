@@ -34,3 +34,20 @@ class CoreMetricTests(unittest.TestCase):
         m = metrics.core(r)
         self.assertGreater(m["stranded_gpu_h"], 0)
         self.assertLess(m["useful_utilisation"], m["utilisation"])
+
+
+class FragmentationTests(unittest.TestCase):
+    def test_spread_fragments_and_binpack_does_not(self):
+        small = [job(f"s{i}", gpus=2, duration=600, kind="notebook") for i in range(4)]
+        big = job("big", gpus=8, arrival=1, duration=60)
+        spread = metrics.fragmentation(simulate(FLEET, small + [big], Policy("spread")))
+        packed = metrics.fragmentation(simulate(FLEET, small + [big], Policy("binpack", placement="binpack")))
+        # Spread leaves 4 free GPUs on each node while the 8-GPU job waits: all of them are unusable to it.
+        self.assertEqual(spread["stranded_by_size"], 1.0)
+        self.assertGreater(spread["idle_while_waiting_gpu_h"], 0)
+        self.assertEqual(packed["idle_while_waiting_gpu_h"], 0.0)          # nothing ever waited
+        self.assertGreater(spread["partial_nodes"], packed["partial_nodes"])
+
+    def test_empty_fleet_time_is_not_fragmented(self):
+        m = metrics.fragmentation(simulate(FLEET, [job("a", gpus=8)], Policy("default")))
+        self.assertEqual((m["stranded_by_size"], m["scattered_free"], m["partial_nodes"]), (0.0, 0.0, 0.0))

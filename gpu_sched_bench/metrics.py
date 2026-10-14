@@ -44,3 +44,30 @@ def core(result: Result) -> dict:
         "queue_wait": _wait_summary(waits),
         "queue_wait_by_kind": {k: _wait_summary(v) for k, v in sorted(by_kind.items())},
     }
+
+
+def fragmentation(result: Result) -> dict:
+    """Time-weighted fragmentation under three definitions, because "fragmentation" means different things:
+
+    A  stranded_by_size: of the GPUs idle while work waits, the share on nodes with fewer free GPUs than the
+       smallest waiting replica needs. These GPUs are idle *because* of fragmentation: the costly kind.
+    B  scattered_free: the share of free GPUs that sit on partly used nodes (queue-independent).
+    C  partial_nodes: the share of nodes that are partly used (structural, node-level).
+    Also: idle_while_waiting_gpu_h, GPU-hours left idle while some job was waiting.
+    """
+    sizes = [n.gpus for n in result.fleet.nodes]
+    idle_wait = unusable = free_total = free_partial = partial_nodes = node_time = 0.0
+    for _, dt, free, need in result.samples:
+        free_total += sum(free) * dt
+        free_partial += sum(f for f, size in zip(free, sizes) if 0 < f < size) * dt
+        partial_nodes += sum(1 for f, size in zip(free, sizes) if 0 < f < size) * dt
+        node_time += len(free) * dt
+        if need:
+            idle_wait += sum(free) * dt
+            unusable += sum(f for f in free if f < need) * dt
+    return {
+        "idle_while_waiting_gpu_h": round(idle_wait / 3600, 1),
+        "stranded_by_size": round(unusable / idle_wait, 4) if idle_wait else 0.0,
+        "scattered_free": round(free_partial / free_total, 4) if free_total else 0.0,
+        "partial_nodes": round(partial_nodes / node_time, 4) if node_time else 0.0,
+    }

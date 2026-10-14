@@ -67,7 +67,8 @@ class Result:
     stranded_gpu_s: float = 0.0      # GPU-seconds held by gang replicas waiting for the rest of their gang
     preempted_gpu_s: float = 0.0     # GPU-seconds of work thrown away by preemption (jobs restart from scratch)
     deadlocked: bool = False         # partial gangs blocked each other and nothing could ever finish
-    samples: list[tuple[float, float, list[int]]] = field(default_factory=list)  # (time, dt, free GPUs per node)
+    # (time, dt, free GPUs per node in fleet order, smallest replica still waiting for a node or 0)
+    samples: list[tuple[float, float, list[int], int]] = field(default_factory=list)
 
     @property
     def unfinished(self) -> list[str]:
@@ -90,7 +91,7 @@ class Simulator:
         self.nominal = {team: int(share * fleet.total_gpus) for team, share in policy.quotas.items()}
         self.usage: dict[str, int] = {}
         self.allocated_gpu_s = self.stranded_gpu_s = self.preempted_gpu_s = 0.0
-        self.samples: list[tuple[float, float, list[int]]] = []
+        self.samples: list[tuple[float, float, list[int], int]] = []
 
     def _push(self, t: float, kind: int, job_id: str, replica: int, epoch: int) -> None:
         self._seq += 1
@@ -104,7 +105,8 @@ class Simulator:
             stranded = sum(r.job.gpus_per_replica for r in self.records.values() for h in r.held_since if h is not None)
             self.allocated_gpu_s += allocated * dt
             self.stranded_gpu_s += stranded * dt
-            self.samples.append((self.now, dt, [n.free for n in self.nodes]))
+            waiting = [self.records[j].job.gpus_per_replica for j in self.pending if self.records[j].placed < self.records[j].job.replicas]
+            self.samples.append((self.now, dt, [n.free for n in self.nodes], min(waiting, default=0)))
         self.now = t
 
     # -- placement --------------------------------------------------------------------------------
