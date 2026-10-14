@@ -124,7 +124,10 @@ class Simulator:
         self._push(self.now + rec.job.duration_s, FINISH, rec.job.id, i)
 
     def _schedule(self) -> None:
-        self._schedule_pods()
+        if self.policy.gang:
+            self._schedule_jobs()
+        else:
+            self._schedule_pods()
         for job_id in list(self.pending):
             rec = self.records[job_id]
             if rec.placed == rec.job.replicas:
@@ -132,6 +135,39 @@ class Simulator:
                 if rec.job.gang:                       # the gang is complete: everyone starts together
                     for i in range(rec.job.replicas):
                         self._start(rec, i)
+
+    def _fit_all(self, rec: JobRecord) -> list[str] | None:
+        """A node for every unplaced replica at once, or None: placement is decided on a copy of the free map."""
+        free = {n.name: n.free for n in self.nodes}
+        plan = []
+        for i, node in enumerate(rec.nodes):
+            if node is not None:
+                continue
+            choice = self._choose(rec.job.gpus_per_replica, free)
+            if choice is None:
+                return None
+            free[choice] -= rec.job.gpus_per_replica
+            plan.append(choice)
+        return plan
+
+    def _schedule_jobs(self) -> None:
+        """Job by job in priority then arrival order; gang jobs are placed all-or-nothing."""
+        order = sorted(self.pending, key=lambda j: (-self.records[j].job.priority, self.records[j].job.arrival_s, j))
+        for job_id in order:
+            rec = self.records[job_id]
+            if rec.job.gang:
+                plan = self._fit_all(rec)
+                if plan is None:
+                    continue
+                for i, node in zip([k for k, n in enumerate(rec.nodes) if n is None], plan):
+                    self._place_replica(rec, i, node)
+                continue
+            for i, node in enumerate(rec.nodes):        # independent replicas: as many as fit now
+                if node is None:
+                    choice = self._choose(rec.job.gpus_per_replica, {n.name: n.free for n in self.nodes})
+                    if choice is None:
+                        break
+                    self._place_replica(rec, i, choice)
 
     def _schedule_pods(self) -> None:
         """Pod by pod, in kube-scheduler queue order; a pod that doesn't fit is skipped."""

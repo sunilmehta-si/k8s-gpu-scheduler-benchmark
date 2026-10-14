@@ -45,3 +45,24 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(starts, [0, 50, 100])               # each replica works as soon as it has a node
         self.assertEqual(r.records["inf"].start, 100)
         self.assertEqual(r.stranded_gpu_s, 0)                # independent replicas are never stranded
+
+
+class GangTests(unittest.TestCase):
+    def test_gang_admission_avoids_the_deadlock(self):
+        jobs = [job("g1", replicas=2, gang=True), job("g2", replicas=2, gpus=6, gang=True)]
+        r = simulate(FLEET, jobs, Policy("gang", gang=True))
+        self.assertFalse(r.deadlocked)
+        self.assertEqual((r.records["g1"].start, r.records["g2"].start), (0, 100))   # g2 runs after g1, nobody stuck
+        self.assertEqual(r.stranded_gpu_s, 0)
+
+    def test_gang_waits_whole_instead_of_holding_part(self):
+        r = simulate(FLEET, [job("blocker", duration=50), job("g", replicas=2, gang=True, arrival=1)],
+                     Policy("gang", gang=True))
+        self.assertEqual(r.records["g"].start, 50)
+        self.assertEqual(r.stranded_gpu_s, 0)            # nothing was held while it waited
+
+    def test_smaller_jobs_backfill_around_a_waiting_gang(self):
+        jobs = [job("blocker", duration=50), job("g", replicas=2, gang=True, arrival=1),
+                job("small", gpus=4, arrival=2, duration=10)]
+        r = simulate(FLEET, jobs, Policy("gang", gang=True))
+        self.assertEqual(r.records["small"].start, 2)    # best-effort queue: the waiting gang doesn't block it
