@@ -95,3 +95,21 @@ def check_fits(jobs: list[Job], max_gpus_per_node: int) -> None:
     if too_big:
         raise TraceError(f"{len(too_big)} job(s) ask for more GPUs per replica than any node has ({max_gpus_per_node}), "
                          f"e.g. {', '.join(too_big[:3])}.")
+
+
+def stats(jobs: list[Job], fleet=None) -> str:
+    """Jobs and GPU-hours by kind and team; with a fleet, demand as a share of capacity over the arrival window."""
+    lines = [f"{len(jobs)} jobs, {sum(j.gpu_seconds for j in jobs) / 3600:,.0f} GPU-hours requested"]
+    for label, key in (("kind", lambda j: j.kind), ("team", lambda j: j.team)):
+        groups: dict[str, list[Job]] = {}
+        for j in jobs:
+            groups.setdefault(key(j), []).append(j)
+        lines.append(f"\nby {label}:")
+        for name, js in sorted(groups.items()):
+            lines.append(f"  {name:<12} {len(js):>5} jobs  {sum(j.gpu_seconds for j in js) / 3600:>9,.0f} GPU-hours"
+                         f"  largest {max(j.gpus for j in js):>3} GPUs")
+    if fleet is not None and jobs:
+        window_h = max(j.arrival_s for j in jobs) / 3600 or 1.0
+        demand = sum(j.gpu_seconds for j in jobs) / 3600 / (fleet.total_gpus * window_h)
+        lines.append(f"\ndemand: {demand:.0%} of {fleet.name} ({fleet.total_gpus} GPUs) over the {window_h:.1f} h arrival window")
+    return "\n".join(lines)

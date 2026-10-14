@@ -46,6 +46,7 @@ class TraceSpec:
     teams: dict[str, float] = field(default_factory=lambda: {"research": 0.4, "product": 0.35, "platform": 0.25})
     shapes: dict[str, Shape] = field(default_factory=lambda: dict(DEFAULT_SHAPES))
     max_gpus_per_node: int = 8
+    max_job_gpus: int = 0          # cap on replicas x GPUs per job (0 = no cap); keep it below the fleet size
     seed: int = 7
 
 
@@ -69,6 +70,8 @@ def generate(spec: TraceSpec) -> list[Job]:
         shape = spec.shapes[kind]
         replicas = _pick(rng, shape.replicas)
         gpus = min(_pick(rng, shape.gpus_per_replica), spec.max_gpus_per_node)
+        while spec.max_job_gpus and replicas > 1 and replicas * gpus > spec.max_job_gpus:
+            replicas //= 2          # a job bigger than the cap could never be placed, so shrink it
         minutes = shape.median_minutes * math.exp(rng.gauss(0, shape.sigma))
         n += 1
         jobs.append(Job(id=f"{kind}-{n:05d}", arrival_s=round(t, 1), team=rng.choices(teams, weights=team_weights)[0],
