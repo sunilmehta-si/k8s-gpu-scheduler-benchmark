@@ -84,6 +84,8 @@ class Simulator:
         for j in jobs:
             self._push(j.arrival_s, ARRIVAL, j.id, -1)
         self.now = 0.0
+        self.nominal = {team: int(share * fleet.total_gpus) for team, share in policy.quotas.items()}
+        self.usage: dict[str, int] = {}
         self.allocated_gpu_s = self.stranded_gpu_s = 0.0
         self.samples: list[tuple[float, float, list[int]]] = []
 
@@ -112,8 +114,25 @@ class Simulator:
         # spread: the node with the most free GPUs; ties broken by name for determinism
         return min(fits, key=lambda n: (-free[n.name], n.name)).name
 
+    def _admissible(self, team: str, need: int) -> bool:
+        """Quota check at admission. A team may always use its nominal quota; with borrowing it may also use
+        GPUs other teams are entitled to but not using. Teams without a quota can only borrow."""
+        if not self.nominal:
+            return True
+        used = self.usage.get(team, 0)
+        over = used + need - self.nominal.get(team, 0)
+        if over <= 0:
+            return True
+        if not self.policy.borrowing:
+            return False
+        lendable = sum(max(0, q - self.usage.get(t, 0)) for t, q in self.nominal.items() if t != team)
+        borrowed_by_others = sum(max(0, self.usage.get(t, 0) - self.nominal.get(t, 0))
+                                 for t in set(self.usage) | set(self.nominal) if t != team)
+        return over <= lendable - borrowed_by_others
+
     def _place_replica(self, rec: JobRecord, i: int, node: str) -> None:
         rec.nodes[i] = node
+        self.usage[rec.job.team] = self.usage.get(rec.job.team, 0) + rec.job.gpus_per_replica
         self.by_name[node].free -= rec.job.gpus_per_replica
         if rec.job.gang:
             rec.held_since[i] = self.now
@@ -126,7 +145,7 @@ class Simulator:
         self._push(self.now + rec.job.duration_s, FINISH, rec.job.id, i)
 
     def _schedule(self) -> None:
-        if self.policy.gang or self.policy.queue == "strict":
+        if self.policy.gang or self.policy.queue == "strict" or self.nominal:
             self._schedule_jobs()
         else:
             self._schedule_pods()
@@ -159,13 +178,16 @@ class Simulator:
         for job_id in order:
             rec = self.records[job_id]
             if rec.job.gang and self.policy.gang:
-                plan = self._fit_all(rec)
+                unplaced = sum(1 for n in rec.nodes if n is None)
+                plan = self._fit_all(rec) if self._admissible(rec.job.team, unplaced * rec.job.gpus_per_replica) else None
                 if plan is not None:
                     for i, node in zip([k for k, n in enumerate(rec.nodes) if n is None], plan):
                         self._place_replica(rec, i, node)
             else:
                 for i, node in enumerate(rec.nodes):    # independent replicas: as many as fit now
                     if node is None:
+                        if not self._admissible(rec.job.team, rec.job.gpus_per_replica):
+                            break
                         choice = self._choose(rec.job.gpus_per_replica, {n.name: n.free for n in self.nodes})
                         if choice is None:
                             break
@@ -198,6 +220,7 @@ class Simulator:
                 else:
                     rec.replica_end[replica] = t
                     self.by_name[rec.nodes[replica]].free += rec.job.gpus_per_replica
+                    self.usage[rec.job.team] -= rec.job.gpus_per_replica
             self._schedule()
             if not self.events and self.pending:
                 deadlocked = True      # nothing will ever finish, and what is pending can never be placed

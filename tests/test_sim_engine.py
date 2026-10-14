@@ -101,3 +101,23 @@ class QueueTests(unittest.TestCase):
     def test_best_effort_lets_small_jobs_through(self):
         r = simulate(FLEET, self.JOBS, Policy("best-effort", gang=True, queue="best-effort"))
         self.assertEqual(r.records["small"].start, 2)
+
+
+class QuotaTests(unittest.TestCase):
+    JOBS = [job("a1", team="a"), job("a2", team="a", arrival=1), job("b1", team="b", arrival=30)]
+
+    def test_without_borrowing_idle_gpus_stay_idle(self):
+        r = simulate(FLEET, self.JOBS, Policy("q", gang=True, quotas={"a": 0.5, "b": 0.5}))
+        self.assertEqual(r.records["a2"].start, 100)     # team a is at its 8-GPU quota; node 2 sits idle until a1 ends
+        self.assertEqual(r.records["b1"].start, 30)      # team b's quota was kept free for it
+
+    def test_borrowing_uses_idle_quota(self):
+        r = simulate(FLEET, self.JOBS, Policy("q", gang=True, quotas={"a": 0.5, "b": 0.5}, borrowing=True))
+        self.assertEqual(r.records["a2"].start, 1)       # borrowed team b's idle quota
+        self.assertEqual(r.records["b1"].start, 100)     # ...so b waits until a GPU frees (preemption comes later)
+
+    def test_quota_validation(self):
+        with self.assertRaises(ValueError):
+            Policy("bad", quotas={"a": 0.7, "b": 0.6})
+        with self.assertRaises(ValueError):
+            Policy("bad", borrowing=True)
