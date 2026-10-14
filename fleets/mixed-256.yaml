@@ -1,0 +1,26 @@
+# A mixed 256-GPU fleet with three node shapes, typical of a shared AI platform:
+# large nodes for training, medium for fine-tuning and inference, small for notebooks.
+# Prices are illustrative on-demand rates in USD; set your own to get real cost numbers.
+name: mixed-256
+pools:
+  - name: h100
+    count: 16
+    gpus_per_node: 8
+    gpu_model: NVIDIA-H100-80GB-HBM3
+    price_per_gpu_hour: 2.50
+    labels:
+      gsb.io/tier: training
+  - name: l40s
+    count: 16
+    gpus_per_node: 4
+    gpu_model: NVIDIA-L40S
+    price_per_gpu_hour: 1.00
+    labels:
+      gsb.io/tier: inference
+  - name: l4
+    count: 32
+    gpus_per_node: 2
+    gpu_model: NVIDIA-L4
+    price_per_gpu_hour: 0.70
+    labels:
+      gsb.io/tier: interactive

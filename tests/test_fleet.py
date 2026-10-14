@@ -28,3 +28,13 @@ class FleetTests(unittest.TestCase):
         for message, data in cases.items():
             with self.subTest(message=message), self.assertRaisesRegex(FleetError, message):
                 parse(data)
+
+
+class SampleFleetTests(unittest.TestCase):
+    def test_bundled_fleets_load(self):
+        from pathlib import Path
+
+        from gpu_sched_bench.fleet import load
+        root = Path(__file__).resolve().parents[1] / "fleets"
+        totals = {p.stem: load(p).total_gpus for p in sorted(root.glob("*.yaml"))}
+        self.assertEqual(totals, {"lab-32": 32, "mixed-256": 256})
