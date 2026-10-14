@@ -41,7 +41,33 @@ def _parser() -> argparse.ArgumentParser:
     rp = sub.add_parser("report", help="Render one or more results JSON files as a Markdown comparison.")
     rp.add_argument("results", nargs="+", help="Results JSON files from gsb simulate.")
     rp.add_argument("--output", "-o", help="Write Markdown here instead of stdout.")
+    mf = sub.add_parser("manifests", help="Print Kubernetes manifests to run a trace on a real scheduler with kwok nodes.")
+    mf.add_argument("--stack", required=True, help="Scheduling stack, e.g. default.")
+    mf.add_argument("--fleet", required=True, help="Fleet YAML file (quotas are sized from it).")
+    mf.add_argument("--trace", required=True, help="Trace JSONL file.")
+    mf.add_argument("--part", choices=("all", "setup", "jobs"), default="all",
+                    help="setup: namespaces, priorities and queues; jobs: one Job per trace job (default: all).")
+    mf.add_argument("--speedup", type=float, default=1.0, help="Divide job durations by this, e.g. 60 (default: 1).")
+    mf.add_argument("--quotas", choices=("equal", "none"), default="equal", help="Team quotas (default: equal).")
     return p
+
+
+def _cmd_manifests(args: argparse.Namespace) -> int:
+    import yaml
+
+    from . import manifests
+    from .fleet import FleetError, load as load_fleet
+    from .presets import equal_quotas
+    from .trace import TraceError, load as load_trace
+    try:
+        fleet, jobs = load_fleet(args.fleet), load_trace(args.trace)
+        shares = equal_quotas([j.team for j in jobs]) if args.quotas == "equal" else {}
+        docs = manifests.render(args.stack, fleet, jobs, shares, args.speedup, args.part)
+    except (FleetError, TraceError, OSError, ValueError) as exc:
+        print(f"gsb: {exc}", file=sys.stderr)
+        return 2
+    print(yaml.safe_dump_all(docs, sort_keys=False), end="")
+    return 0
 
 
 def _cmd_report(args: argparse.Namespace) -> int:
@@ -142,6 +168,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_simulate(args)
     if args.command == "report":
         return _cmd_report(args)
+    if args.command == "manifests":
+        return _cmd_manifests(args)
     return 0
 
 
