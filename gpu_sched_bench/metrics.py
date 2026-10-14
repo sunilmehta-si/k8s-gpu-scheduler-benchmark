@@ -105,7 +105,7 @@ def cost(result: Result) -> dict:
     by_model: dict[str, float] = {}
     allocated = stranded = wasted = 0.0
     for r in result.records.values():
-        job_cost = r.wasted_cost
+        job_cost = r.billed_before
         wasted += r.wasted_cost
         for node, placed, start, end in zip(r.nodes, r.placed_at, r.replica_start, r.replica_end):
             if node is None:

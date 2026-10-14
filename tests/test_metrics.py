@@ -95,6 +95,7 @@ class CostTests(unittest.TestCase):
         self.assertEqual(c["stranded"], round(8 * 1799 / 3600 * 3.6, 2))
         pol = Policy("r", gang=True, quotas={"a": 0.5, "b": 0.5}, borrowing=True, reclaim=True)
         jobs = [Job("a1", 0, "a", "training", 1, 8, 3600, 0, False), Job("a2", 0, "a", "training", 1, 8, 3600, 0, False),
-                Job("b1", 1800, "b", "training", 1, 8, 3600, 0, False)]
+                Job("b1", 1700, "b", "training", 1, 8, 3600, 0, False)]
         c = metrics.cost(simulate(self.PRICED, jobs, pol))
-        self.assertEqual(c["preempted_work"], round(8 * 0.5 * 3.6, 2))   # half an hour of a2 on 8 GPUs was thrown away
+        # a2 ran 1700 s and had not reached its first 30-minute checkpoint, so all of it was lost
+        self.assertEqual(c["preempted_work"], round(8 * 1700 / 3600 * 3.6, 2))

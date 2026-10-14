@@ -18,6 +18,10 @@ ARRIVAL, FINISH = 0, 1
 # creation time. Pods of jobs submitted at the same moment therefore interleave, which is how pod-by-pod
 # scheduling ends up with several half-placed gangs.
 POD_CREATE_INTERVAL_S = 0.01
+# After preemption, training and fine-tuning resume from their last checkpoint; work since then is lost.
+# Inference services and notebooks are treated as resumable (they lose nothing but their place).
+CHECKPOINT_INTERVAL_S = 1800.0
+CHECKPOINTED_KINDS = ("training", "finetune")
 
 
 @dataclass
@@ -37,7 +41,9 @@ class JobRecord:
     replica_end: list[float | None] = field(default_factory=list)
     held_since: list[float | None] = field(default_factory=list)  # placed but waiting for the rest of its gang
     placed_at: list[float | None] = field(default_factory=list)    # when each replica got its node (billing starts)
-    wasted_cost: float = 0.0                                       # GPU cost of work discarded by preemption
+    remaining: list[float] = field(default_factory=list)           # work left per replica, in seconds
+    billed_before: float = 0.0                                     # GPU cost of allocations ended by preemption
+    wasted_cost: float = 0.0                                       # the part of that cost whose work was lost
     epoch: int = 0                                                 # bumped on preemption; stale finishes are ignored
     preemptions: int = 0
 
@@ -83,7 +89,8 @@ class Simulator:
         self.nodes = [NodeState(n.name, n.pool, n.gpus, n.gpus, n.price_per_gpu_hour) for n in fleet.nodes]
         self.by_name = {n.name: n for n in self.nodes}
         self.records = {j.id: JobRecord(j, [None] * j.replicas, [None] * j.replicas, [None] * j.replicas,
-                                        [None] * j.replicas, [None] * j.replicas) for j in jobs}
+                                        [None] * j.replicas, [None] * j.replicas, [j.duration_s] * j.replicas)
+                        for j in jobs}
         self.pending: list[str] = []
         self.events: list[tuple[float, int, int, str, int, int]] = []
         self._seq = 0
@@ -150,7 +157,7 @@ class Simulator:
     def _start(self, rec: JobRecord, i: int) -> None:
         rec.held_since[i] = None
         rec.replica_start[i] = self.now
-        self._push(self.now + rec.job.duration_s, FINISH, rec.job.id, i, rec.epoch)
+        self._push(self.now + rec.remaining[i], FINISH, rec.job.id, i, rec.epoch)
 
     def _schedule(self) -> None:
         if self.policy.gang or self.policy.queue == "strict" or self.nominal:
@@ -180,18 +187,28 @@ class Simulator:
         return plan
 
     def _preempt(self, rec: JobRecord) -> None:
-        """Evict a job: free its GPUs, discard its progress, and queue it again."""
+        """Evict a job: free its GPUs, keep checkpointed progress, lose the rest, and queue it again."""
         for i, node in enumerate(rec.nodes):
             if node is None:
                 continue
-            self.by_name[node].free += rec.job.gpus_per_replica
-            self.usage[rec.job.team] -= rec.job.gpus_per_replica
-            rec.wasted_cost += (self.now - rec.placed_at[i]) * rec.job.gpus_per_replica * self.by_name[node].price / 3600
-            if rec.replica_start[i] is not None and rec.replica_end[i] is None:
-                self.preempted_gpu_s += (self.now - rec.replica_start[i]) * rec.job.gpus_per_replica
+            gpus, price = rec.job.gpus_per_replica, self.by_name[node].price / 3600
+            self.by_name[node].free += gpus
+            self.usage[rec.job.team] -= gpus
+            rec.billed_before += (self.now - rec.placed_at[i]) * gpus * price
+            if rec.replica_start[i] is None or rec.replica_end[i] is not None:
+                continue                               # it was only held (stranded), or had already finished
+            elapsed = self.now - rec.replica_start[i]
+            kept = (elapsed // CHECKPOINT_INTERVAL_S) * CHECKPOINT_INTERVAL_S \
+                if rec.job.kind in CHECKPOINTED_KINDS else elapsed
+            rec.remaining[i] -= kept
+            lost = elapsed - kept
+            self.preempted_gpu_s += lost * gpus
+            rec.wasted_cost += lost * gpus * price
         n = rec.job.replicas
-        rec.nodes, rec.replica_start, rec.replica_end, rec.held_since, rec.placed_at = \
-            [None] * n, [None] * n, [None] * n, [None] * n, [None] * n
+        unfinished = [i for i in range(n) if rec.replica_end[i] is None]
+        for i in range(n):
+            if i in unfinished:
+                rec.nodes[i] = rec.replica_start[i] = rec.held_since[i] = rec.placed_at[i] = None
         rec.epoch += 1
         rec.preemptions += 1
         self.pending.append(rec.job.id)

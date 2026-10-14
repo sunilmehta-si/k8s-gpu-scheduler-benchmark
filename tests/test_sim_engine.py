@@ -144,3 +144,26 @@ class ReclaimTests(unittest.TestCase):
     def test_reclaim_requires_borrowing(self):
         with self.assertRaises(ValueError):
             Policy("bad", quotas={"a": 1.0}, reclaim=True)
+
+
+class CheckpointTests(unittest.TestCase):
+    POLICY = Policy("reclaim", gang=True, quotas={"a": 0.5, "b": 0.5}, borrowing=True, reclaim=True)
+
+    def test_training_resumes_from_its_last_checkpoint(self):
+        # a2 started last, so it is the victim when team b reclaims its quota at t=4000
+        jobs = [job("a1", team="a", duration=7200), job("a2", team="a", duration=7200, arrival=1),
+                job("b1", team="b", arrival=4000, duration=100)]
+        r = simulate(FLEET, jobs, self.POLICY)
+        a2 = r.records["a2"]
+        self.assertEqual((a2.preemptions, r.records["a1"].preemptions), (1, 0))
+        # it ran 3999 s: checkpoints at 1800 and 3600 are kept, the last 399 s are lost
+        self.assertEqual(r.preempted_gpu_s, 8 * 399)
+        self.assertEqual(a2.end, 4100 + 7200 - 3600)           # restarted when b1 finished, with 3600 s left
+
+    def test_inference_resumes_without_loss(self):
+        jobs = [job("a1", team="a", duration=7200), job("svc", team="a", kind="inference", duration=7200, arrival=1),
+                job("b1", team="b", arrival=4000, duration=100)]
+        r = simulate(FLEET, jobs, self.POLICY)
+        self.assertEqual(r.records["svc"].preemptions, 1)
+        self.assertEqual(r.preempted_gpu_s, 0)                  # a service loses nothing but its place
+        self.assertEqual(r.records["svc"].end, 4100 + (7200 - 3999))
