@@ -149,9 +149,41 @@ def volcano_workload(job: Job, speedup: float, quotas: dict[str, float] | None =
     }
 
 
+# KAI Scheduler: hierarchical scheduling.run.ai/v2 Queues (a parent and one leaf per team), as in the KAI
+# repository's docs/quickstart and docs/batch examples. Gangs use the kai.scheduler/batch-min-member annotation.
+KAI_API = "scheduling.run.ai/v2"
+KAI_PARENT = "gsb-parent"
+
+
+def _kai_resources(gpu_quota: int) -> dict:
+    unlimited = {"quota": 0, "limit": -1, "overQuotaWeight": 1}
+    return {"cpu": dict(unlimited), "memory": dict(unlimited), "gpu": {"quota": gpu_quota, "limit": -1, "overQuotaWeight": 1}}
+
+
+def _kai_queue(team: str, quotas: dict[str, float]) -> str:
+    return f"gsb-{team}" if quotas else "gsb-shared"
+
+
+def kai_setup(fleet: Fleet, jobs: list[Job], quotas: dict[str, float]) -> list[dict]:
+    docs = [{"apiVersion": KAI_API, "kind": "Queue", "metadata": {"name": KAI_PARENT}, "spec": {"resources": _kai_resources(0)}}]
+    gpus = _gpu_quotas(fleet, jobs, quotas)
+    leaves = sorted(gpus.items()) if gpus else [(None, 0)]
+    for team, quota in leaves:
+        name = _kai_queue(team, quotas) if team else "gsb-shared"
+        docs.append({"apiVersion": KAI_API, "kind": "Queue", "metadata": {"name": name},
+                     "spec": {"parentQueue": KAI_PARENT, "resources": _kai_resources(quota)}})
+    return docs
+
+
+def kai_workload(job: Job, speedup: float, quotas: dict[str, float] | None = None) -> dict:
+    annotations = {"kai.scheduler/batch-min-member": str(job.replicas)} if job.gang else {}
+    return batch_job(job, speedup, scheduler="kai-scheduler", annotations=annotations,
+                     pod_labels={"kai.scheduler/queue": _kai_queue(job.team, quotas or {})})
+
+
 STACKS = {"default": (default_setup, default_workload), "kueue": (kueue_setup, kueue_workload),
-          "volcano": (volcano_setup, volcano_workload)}
-QUOTA_AWARE_WORKLOADS = {"volcano"}   # workload renderers that need the quotas to pick a queue
+          "volcano": (volcano_setup, volcano_workload), "kai": (kai_setup, kai_workload)}
+QUOTA_AWARE_WORKLOADS = {"volcano", "kai"}   # workload renderers that need the quotas to pick a queue
 
 
 def render(stack: str, fleet: Fleet, jobs: list[Job], quotas: dict[str, float], speedup: float = 1.0,

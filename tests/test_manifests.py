@@ -94,3 +94,35 @@ class VolcanoManifestTests(unittest.TestCase):
         self.assertEqual(train["spec"]["tasks"][0]["replicas"], 2)
         self.assertEqual(train["spec"]["tasks"][0]["template"]["spec"]["schedulerName"], "volcano")
         self.assertEqual(nb["spec"]["minAvailable"], 1)                   # notebooks are not gangs
+
+
+class KaiManifestTests(unittest.TestCase):
+    Q = {"research": 0.5, "product": 0.5}
+
+    def test_hierarchical_queues_with_gpu_quota(self):
+        docs = manifests.render("kai", FLEET, JOBS, self.Q, part="setup")
+        queues = [d for d in docs if d["kind"] == "Queue"]
+        self.assertEqual([q["metadata"]["name"] for q in queues], ["gsb-parent", "gsb-product", "gsb-research"])
+        self.assertTrue(all(q["apiVersion"] == "scheduling.run.ai/v2" for q in queues))
+        leaf = queues[2]["spec"]
+        self.assertEqual(leaf["parentQueue"], "gsb-parent")
+        self.assertEqual(leaf["resources"]["gpu"], {"quota": 16, "limit": -1, "overQuotaWeight": 1})
+
+    def test_jobs_use_kai_with_gang_annotation(self):
+        train, nb = manifests.render("kai", FLEET, JOBS, self.Q, part="jobs")
+        self.assertEqual(train["metadata"]["annotations"]["kai.scheduler/batch-min-member"], "2")
+        self.assertNotIn("kai.scheduler/batch-min-member", nb["metadata"]["annotations"])
+        pod = train["spec"]["template"]
+        self.assertEqual(pod["spec"]["schedulerName"], "kai-scheduler")
+        self.assertEqual(pod["metadata"]["labels"]["kai.scheduler/queue"], "gsb-research")
+
+    def test_every_stack_renders_the_sample_trace(self):
+        from gpu_sched_bench.fleet import load as load_fleet
+        from gpu_sched_bench.presets import STACKS, equal_quotas
+        from gpu_sched_bench.trace import load as load_trace
+        fleet, jobs = load_fleet(ROOT / "fleets/mixed-256.yaml"), load_trace(ROOT / "traces/mixed-256-8h.jsonl")
+        for stack in STACKS:
+            docs = manifests.render(stack, fleet, jobs, equal_quotas([j.team for j in jobs]), speedup=60)
+            names = [(d["kind"], d["metadata"].get("namespace"), d["metadata"]["name"]) for d in docs]
+            self.assertEqual(len(names), len(set(names)), stack)                       # no duplicate objects
+            self.assertEqual(sum(1 for d in docs if d["kind"] == "Job"), len(jobs), stack)
