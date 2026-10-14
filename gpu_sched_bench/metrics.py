@@ -95,3 +95,38 @@ def fairness(result: Result) -> dict:
                           "never_started": sum(1 for r in recs if r.start is None),
                           "preemptions": sum(r.preemptions for r in recs), **_wait_summary(waits)}
     return {"jain_served_share": jain([t["served_share"] for t in per_team.values()]), "teams": per_team}
+
+
+def cost(result: Result) -> dict:
+    """GPU cost from each pool's price per GPU-hour. A replica is billed from placement to its end (or to the
+    end of the run if it never finished), so stranded and deadlocked GPUs cost money like working ones."""
+    price = {n.name: n.price_per_gpu_hour / 3600 for n in result.fleet.nodes}
+    by_team: dict[str, float] = {}
+    by_model: dict[str, float] = {}
+    allocated = stranded = wasted = 0.0
+    for r in result.records.values():
+        job_cost = r.wasted_cost
+        wasted += r.wasted_cost
+        for node, placed, start, end in zip(r.nodes, r.placed_at, r.replica_start, r.replica_end):
+            if node is None:
+                continue
+            until = end if end is not None else result.makespan
+            job_cost += (until - placed) * r.job.gpus_per_replica * price[node]
+            stranded += ((start if start is not None else until) - placed) * r.job.gpus_per_replica * price[node]
+        allocated += job_cost
+        by_team[r.job.team] = by_team.get(r.job.team, 0.0) + job_cost
+        model = r.job.model or r.job.kind
+        by_model[model] = by_model.get(model, 0.0) + job_cost
+    sizes = [n.price_per_gpu_hour / 3600 for n in result.fleet.nodes]
+    idle = sum(sum(f * p for f, p in zip(free, sizes)) * dt for _, dt, free, _ in result.samples)
+    useful_gpu_h = (result.allocated_gpu_s - result.stranded_gpu_s) / 3600 - result.preempted_gpu_s / 3600
+    total = allocated + idle
+    return {
+        "total": round(total, 2),
+        "idle": round(idle, 2),
+        "stranded": round(stranded, 2),
+        "preempted_work": round(wasted, 2),
+        "per_useful_gpu_h": round(total / useful_gpu_h, 3) if useful_gpu_h > 0 else None,
+        "by_team": {k: round(v, 2) for k, v in sorted(by_team.items())},
+        "by_model": {k: round(v, 2) for k, v in sorted(by_model.items(), key=lambda kv: -kv[1])},
+    }

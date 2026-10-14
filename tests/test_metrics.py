@@ -73,3 +73,28 @@ class FairnessTests(unittest.TestCase):
         f = metrics.fairness(simulate(FLEET, jobs, Policy("default")))
         self.assertEqual(f["teams"]["a"]["never_started"], 1)
         self.assertLess(f["jain_served_share"], 1.0)
+
+
+class CostTests(unittest.TestCase):
+    PRICED = parse({"name": "p", "pools": [{"name": "n", "count": 2, "gpus_per_node": 8, "price_per_gpu_hour": 3.6}]})
+
+    def test_costs_add_up(self):
+        jobs = [Job("a", 0, "red", "training", 1, 8, 3600, 0, False, "llama"),
+                Job("b", 0, "blue", "inference", 1, 4, 1800, 0, False, "chat")]
+        c = metrics.cost(simulate(self.PRICED, jobs, Policy("default")))
+        self.assertEqual(c["by_team"], {"blue": 4 * 0.5 * 3.6, "red": 8 * 1 * 3.6})
+        self.assertEqual(c["by_model"]["llama"], 28.8)
+        # 16 GPUs for one hour = 57.6; the 4 GPUs left over on b's node are idle for the full hour
+        self.assertEqual(c["total"], 57.6)
+        self.assertEqual(c["idle"], round(57.6 - 28.8 - 7.2, 2))
+        self.assertEqual(c["per_useful_gpu_h"], round(57.6 / 10, 3))   # 10 useful GPU-hours were served
+
+    def test_stranded_and_preempted_costs(self):
+        held = [Job("blocker", 0, "a", "training", 1, 8, 1800, 0, False), Job("g", 1, "a", "training", 2, 8, 600, 0, True)]
+        c = metrics.cost(simulate(self.PRICED, held, Policy("default")))
+        self.assertEqual(c["stranded"], round(8 * 1799 / 3600 * 3.6, 2))
+        pol = Policy("r", gang=True, quotas={"a": 0.5, "b": 0.5}, borrowing=True, reclaim=True)
+        jobs = [Job("a1", 0, "a", "training", 1, 8, 3600, 0, False), Job("a2", 0, "a", "training", 1, 8, 3600, 0, False),
+                Job("b1", 1800, "b", "training", 1, 8, 3600, 0, False)]
+        c = metrics.cost(simulate(self.PRICED, jobs, pol))
+        self.assertEqual(c["preempted_work"], round(8 * 0.5 * 3.6, 2))   # half an hour of a2 on 8 GPUs was thrown away

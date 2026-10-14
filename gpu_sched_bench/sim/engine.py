@@ -36,6 +36,8 @@ class JobRecord:
     replica_start: list[float | None] = field(default_factory=list)
     replica_end: list[float | None] = field(default_factory=list)
     held_since: list[float | None] = field(default_factory=list)  # placed but waiting for the rest of its gang
+    placed_at: list[float | None] = field(default_factory=list)    # when each replica got its node (billing starts)
+    wasted_cost: float = 0.0                                       # GPU cost of work discarded by preemption
     epoch: int = 0                                                 # bumped on preemption; stale finishes are ignored
     preemptions: int = 0
 
@@ -81,7 +83,7 @@ class Simulator:
         self.nodes = [NodeState(n.name, n.pool, n.gpus, n.gpus, n.price_per_gpu_hour) for n in fleet.nodes]
         self.by_name = {n.name: n for n in self.nodes}
         self.records = {j.id: JobRecord(j, [None] * j.replicas, [None] * j.replicas, [None] * j.replicas,
-                                        [None] * j.replicas) for j in jobs}
+                                        [None] * j.replicas, [None] * j.replicas) for j in jobs}
         self.pending: list[str] = []
         self.events: list[tuple[float, int, int, str, int, int]] = []
         self._seq = 0
@@ -137,6 +139,7 @@ class Simulator:
 
     def _place_replica(self, rec: JobRecord, i: int, node: str) -> None:
         rec.nodes[i] = node
+        rec.placed_at[i] = self.now
         self.usage[rec.job.team] = self.usage.get(rec.job.team, 0) + rec.job.gpus_per_replica
         self.by_name[node].free -= rec.job.gpus_per_replica
         if rec.job.gang:
@@ -183,10 +186,12 @@ class Simulator:
                 continue
             self.by_name[node].free += rec.job.gpus_per_replica
             self.usage[rec.job.team] -= rec.job.gpus_per_replica
+            rec.wasted_cost += (self.now - rec.placed_at[i]) * rec.job.gpus_per_replica * self.by_name[node].price / 3600
             if rec.replica_start[i] is not None and rec.replica_end[i] is None:
                 self.preempted_gpu_s += (self.now - rec.replica_start[i]) * rec.job.gpus_per_replica
         n = rec.job.replicas
-        rec.nodes, rec.replica_start, rec.replica_end, rec.held_since = [None] * n, [None] * n, [None] * n, [None] * n
+        rec.nodes, rec.replica_start, rec.replica_end, rec.held_since, rec.placed_at = \
+            [None] * n, [None] * n, [None] * n, [None] * n, [None] * n
         rec.epoch += 1
         rec.preemptions += 1
         self.pending.append(rec.job.id)
