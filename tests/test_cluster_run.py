@@ -52,3 +52,30 @@ class ClusterRunTests(unittest.TestCase):
                           clock=clock, sleep=clock.sleep)
         self.assertEqual(doc["stacks"]["default"]["jobs_finished"], 0)
         self.assertGreaterEqual(clock.t, 30)
+
+
+class SetupRetryTests(unittest.TestCase):
+    def test_retries_until_the_webhook_is_ready(self):
+        from gpu_sched_bench.cluster.kube import KubeError
+        from gpu_sched_bench.cluster.run import _apply_with_retry
+
+        class Flaky:
+            calls = 0
+
+            def apply(self, text, server_side=False):
+                Flaky.calls += 1
+                if Flaky.calls < 3:
+                    raise KubeError("failed calling webhook: connection refused")
+        waits = []
+        _apply_with_retry(Flaky(), "x", waits.append, lambda m: None)
+        self.assertEqual((Flaky.calls, waits), (3, [10.0, 10.0]))
+
+    def test_gives_up_after_the_last_attempt(self):
+        from gpu_sched_bench.cluster.kube import KubeError
+        from gpu_sched_bench.cluster.run import _apply_with_retry
+
+        class Broken:
+            def apply(self, text, server_side=False):
+                raise KubeError("no matches for kind ClusterQueue")
+        with self.assertRaisesRegex(KubeError, "ClusterQueue"):
+            _apply_with_retry(Broken(), "x", lambda s: None, lambda m: None, attempts=2)

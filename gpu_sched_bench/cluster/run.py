@@ -10,9 +10,23 @@ from .. import kwok, manifests, results
 from ..fleet import Fleet
 from ..trace import Job
 from .check import runtime_check
+from .kube import KubeError
 from .collect import collect
 from .replay import plan, replay
 from .result import to_result
+
+
+def _apply_with_retry(kube, text: str, sleep, log, attempts: int = 6, wait_s: float = 10.0) -> None:
+    """Schedulers' admission webhooks can lag their deployments becoming Available; retry the setup a few times."""
+    for attempt in range(1, attempts + 1):
+        try:
+            kube.apply(text)
+            return
+        except KubeError as exc:
+            if attempt == attempts:
+                raise
+            log(f"setup apply failed (attempt {attempt}/{attempts}), retrying in {wait_s:.0f}s: {str(exc)[:160]}")
+            sleep(wait_s)
 
 
 def run_cluster(kube, fleet: Fleet, jobs: list[Job], stack: str, shares: dict[str, float], speedup: float,
@@ -22,7 +36,7 @@ def run_cluster(kube, fleet: Fleet, jobs: list[Job], stack: str, shares: dict[st
     kube.apply(kwok.render(fleet))
     log(f"created {len(fleet.nodes)} kwok nodes ({fleet.total_gpus} GPUs)")
     setup = manifests.render(stack, fleet, jobs, shares, speedup, part="setup")
-    kube.apply(yaml.safe_dump_all(setup, sort_keys=False))
+    _apply_with_retry(kube, yaml.safe_dump_all(setup, sort_keys=False), sleep, log)
     log(f"applied {len(setup)} setup objects for {stack}")
     docs = {d["metadata"]["name"]: d for d in manifests.render(stack, fleet, jobs, shares, speedup, part="jobs")}
     replay_start = clock()
