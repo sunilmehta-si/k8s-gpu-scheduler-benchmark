@@ -37,7 +37,9 @@ jobs:
           cluster_name: gsb
           config: cluster/kind.yaml
       - name: Install kwok
-        run: scripts/cluster-up.sh
+        run: |
+          scripts/cluster-up.sh
+          kubectl get stages.kwok.x-k8s.io -o custom-columns=NAME:.metadata.name,DELAY_FROM:.spec.delay.durationFrom.expressionFrom
       - name: Install the scheduler
         if: matrix.stack != 'default'
         run: scripts/install-${{ matrix.stack }}.sh
@@ -46,12 +48,18 @@ jobs:
           STACK: ${{ matrix.stack }}
         run: |
           gsb cluster run --stack "$STACK" --fleet fleets/lab-32.yaml --trace traces/lab-32-smoke.jsonl \
-            --speedup 300 --timeout 900 -o "cluster-$STACK.json"
+            --speedup 300 --timeout 900 --strict -o "cluster-$STACK.json"
           gsb simulate --stacks "$STACK" --fleet fleets/lab-32.yaml --trace traces/lab-32-smoke.jsonl -o "model-$STACK.json"
           {
             echo "### $STACK on a kind + kwok cluster"; gsb report "cluster-$STACK.json"
             echo "### $STACK in the reference model"; gsb report "model-$STACK.json"
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Evidence from the cluster
+        if: always()
+        run: |
+          kubectl get pods -A -l gsb.io/job -o json | jq -r '.items[:6][] | [.metadata.name,
+            (.metadata.annotations["pod-complete.stage.kwok.x-k8s.io/delay"] // "-"), .status.phase,
+            (.status.startTime // "-"), ([.status.containerStatuses[]?.state.terminated.finishedAt] | first // "-")] | @tsv' || true
       - name: Diagnostics
         if: failure()
         run: |
