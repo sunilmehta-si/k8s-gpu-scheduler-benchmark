@@ -49,7 +49,42 @@ def _parser() -> argparse.ArgumentParser:
                     help="setup: namespaces, priorities and queues; jobs: one Job per trace job (default: all).")
     mf.add_argument("--speedup", type=float, default=1.0, help="Divide job durations by this, e.g. 60 (default: 1).")
     mf.add_argument("--quotas", choices=("equal", "none"), default="equal", help="Team quotas (default: equal).")
+    cl = sub.add_parser("cluster", help="Run a trace on a real cluster with kwok GPU nodes.")
+    csub = cl.add_subparsers(dest="cluster_command", required=True)
+    cr = csub.add_parser("run", help="Create kwok nodes, apply the stack's queues, replay the trace, collect results.")
+    cr.add_argument("--stack", required=True, help="The scheduler installed in the cluster: default, kueue, volcano or kai.")
+    cr.add_argument("--fleet", required=True, help="Fleet YAML file.")
+    cr.add_argument("--trace", required=True, help="Trace JSONL file.")
+    cr.add_argument("--speedup", type=float, default=60.0, help="Trace seconds per wall second (default: 60).")
+    cr.add_argument("--timeout", type=float, default=1800.0, help="Give up waiting after this many wall seconds (default: 1800).")
+    cr.add_argument("--quotas", choices=("equal", "none"), default="equal", help="Team quotas (default: equal).")
+    cr.add_argument("--context", help="kubectl context (default: the current one).")
+    cr.add_argument("--output", "-o", help="Write results JSON here instead of stdout.")
     return p
+
+
+def _cmd_cluster(args: argparse.Namespace) -> int:
+    from .cluster.kube import KubeError, Kubectl
+    from .cluster.run import run_cluster
+    from .fleet import FleetError, load as load_fleet
+    from .presets import equal_quotas
+    from .results import dumps
+    from .trace import TraceError, check_fits, load as load_trace
+    try:
+        fleet, jobs = load_fleet(args.fleet), load_trace(args.trace)
+        check_fits(jobs, fleet.max_gpus_per_node)
+        shares = equal_quotas([j.team for j in jobs]) if args.quotas == "equal" else {}
+        doc = run_cluster(Kubectl(context=args.context), fleet, jobs, args.stack, shares, args.speedup,
+                          timeout_s=args.timeout, trace_name=Path(args.trace).name,
+                          log=lambda m: print(f"gsb: {m}", file=sys.stderr))
+    except (FleetError, TraceError, KubeError, OSError, ValueError) as exc:
+        print(f"gsb: {exc}", file=sys.stderr)
+        return 2
+    if args.output:
+        Path(args.output).write_text(dumps(doc))
+    else:
+        print(dumps(doc), end="")
+    return 0
 
 
 def _cmd_manifests(args: argparse.Namespace) -> int:
@@ -170,6 +205,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_report(args)
     if args.command == "manifests":
         return _cmd_manifests(args)
+    if args.command == "cluster":
+        return _cmd_cluster(args)
     return 0
 
 
