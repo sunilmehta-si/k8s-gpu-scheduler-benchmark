@@ -51,6 +51,10 @@ def _parser() -> argparse.ArgumentParser:
                     help="setup: namespaces, priorities and queues; jobs: one Job per trace job (default: all).")
     mf.add_argument("--speedup", type=float, default=1.0, help="Divide job durations by this, e.g. 60 (default: 1).")
     mf.add_argument("--quotas", choices=("equal", "none"), default="equal", help="Team quotas (default: equal).")
+    ch = sub.add_parser("chart", help="Draw an SVG bar chart of a results file (cost, time to finish, queue wait).")
+    ch.add_argument("results", help="Results JSON from gsb simulate or gsb cluster run.")
+    ch.add_argument("--output", "-o", required=True, help="SVG file to write.")
+    ch.add_argument("--title", default="", help="Chart title (default: fleet, jobs and mode).")
     cm = sub.add_parser("compare", help="Put a simulation next to a cluster run of the same stack and trace.")
     cm.add_argument("model", help="Results JSON from gsb simulate.")
     cm.add_argument("cluster", help="Results JSON from gsb cluster run.")
@@ -97,6 +101,19 @@ def parse_seeds(text: str) -> list[int]:
     if not seeds:
         raise ValueError("no seeds given")
     return sorted(set(seeds))
+
+
+def _cmd_chart(args: argparse.Namespace) -> int:
+    import json
+
+    from .chart import svg
+    try:
+        data = json.loads(Path(args.results).read_text())
+        Path(args.output).write_text(svg(data, args.title))
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"gsb: {exc}", file=sys.stderr)
+        return 2
+    return 0
 
 
 def _cmd_compare(args: argparse.Namespace) -> int:
@@ -310,6 +327,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_ablate(args)
     if args.command == "compare":
         return _cmd_compare(args)
+    if args.command == "chart":
+        return _cmd_chart(args)
     return 0
 
 
