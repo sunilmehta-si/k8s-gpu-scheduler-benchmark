@@ -24,3 +24,19 @@ class CommittedResultsTests(unittest.TestCase):
     def test_report_matches_results(self):
         expected = "\n".join(to_markdown(json.loads((ROOT / f"results/{n}.json").read_text())) for n in RUNS)
         self.assertEqual((ROOT / "results/README.md").read_text(), expected, "results/README.md is stale: rerun gsb report")
+
+
+class CommittedSweepAndChartTests(unittest.TestCase):
+    def test_sweep_regenerates_exactly(self):
+        from gpu_sched_bench.sweep import run_sweep
+        fresh = run_sweep(load_fleet(ROOT / "fleets/mixed-256.yaml"), list(STACKS), list(range(1, 11)), rate=16, hours=8)
+        self.assertEqual(fresh, json.loads((ROOT / "results/sweep-mixed-256.json").read_text()),
+                         "results/sweep-mixed-256.json is stale: rerun gsb sweep")
+        self.assertEqual((ROOT / "results/sweep-mixed-256.md").read_text(), to_markdown(fresh))
+
+    def test_charts_match_results(self):
+        from gpu_sched_bench.chart import svg
+        titles = {"mixed-256": "256-GPU fleet, 131 jobs (reference simulation)", "lab-32": "32-GPU lab, 26 jobs (reference simulation)"}
+        for name, title in titles.items():
+            data = json.loads((ROOT / f"results/{name}.json").read_text())
+            self.assertEqual((ROOT / f"results/{name}.svg").read_text(), svg(data, title), f"results/{name}.svg is stale")
