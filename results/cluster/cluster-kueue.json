@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "tool_version": "0.1.0",
+  "mode": "cluster",
+  "fleet": {
+    "name": "lab-32",
+    "nodes": 6,
+    "gpus": 32,
+    "pools": [
+      {
+        "name": "h100",
+        "nodes": 2,
+        "gpus_per_node": 8,
+        "gpu_model": "NVIDIA-H100-80GB-HBM3",
+        "price_per_gpu_hour": 2.5
+      },
+      {
+        "name": "l40s",
+        "nodes": 4,
+        "gpus_per_node": 4,
+        "gpu_model": "NVIDIA-L40S",
+        "price_per_gpu_hour": 1.0
+      }
+    ]
+  },
+  "trace": {
+    "name": "lab-32-smoke.jsonl",
+    "jobs": 12,
+    "requested_gpu_h": 103.7
+  },
+  "quotas": {
+    "platform": 0.3333333333333333,
+    "product": 0.3333333333333333,
+    "research": 0.3333333333333333
+  },
+  "stacks": {
+    "kueue": {
+      "policy": {
+        "name": "kueue",
+        "source": "cluster"
+      },
+      "makespan_h": 7.72,
+      "jobs": 12,
+      "jobs_finished": 12,
+      "deadlocked": false,
+      "utilisation": 0.5037,
+      "useful_utilisation": 0.4713,
+      "stranded_gpu_h": 8.0,
+      "preempted_gpu_h": 0.0,
+      "queue_wait": {
+        "jobs": 12,
+        "p50_min": 27.7,
+        "p95_min": 194.5,
+        "max_min": 194.5
+      },
+      "queue_wait_by_kind": {
+        "finetune": {
+          "jobs": 3,
+          "p50_min": 28.2,
+          "p95_min": 91.7,
+          "max_min": 91.7
+        },
+        "inference": {
+          "jobs": 2,
+          "p50_min": 27.7,
+          "p95_min": 45.0,
+          "max_min": 45.0
+        },
+        "notebook": {
+          "jobs": 6,
+          "p50_min": 24.8,
+          "p95_min": 35.3,
+          "max_min": 35.3
+        },
+        "training": {
+          "jobs": 1,
+          "p50_min": 194.5,
+          "p95_min": 194.5,
+          "max_min": 194.5
+        }
+      },
+      "fragmentation": {
+        "idle_while_waiting_gpu_h": 39.8,
+        "stranded_by_size": 0.4459,
+        "scattered_free": 0.1515,
+        "partial_nodes": 0.1766
+      },
+      "fairness": {
+        "jain_service": 0.9931,
+        "jain_served_share": 1.0,
+        "teams": {
+          "platform": {
+            "jobs": 4,
+            "requested_gpu_h": 6.1,
+            "service": 0.5803,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 25.1,
+            "p95_min": 34.1,
+            "max_min": 34.1
+          },
+          "product": {
+            "jobs": 5,
+            "requested_gpu_h": 95.8,
+            "service": 0.6811,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 45.0,
+            "p95_min": 194.5,
+            "max_min": 194.5
+          },
+          "research": {
+            "jobs": 3,
+            "requested_gpu_h": 1.7,
+            "service": 0.5675,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 24.3,
+            "p95_min": 35.3,
+            "max_min": 35.3
+          }
+        }
+      },
+      "cost": {
+        "total": 431.5,
+        "idle": 197.0,
+        "stranded": 45.0,
+        "preempted_work": 0.0,
+        "per_useful_gpu_h": 3.704,
+        "by_team": {
+          "platform": 8.42,
+          "product": 223.08,
+          "research": 3.0
+        },
+        "by_model": {
+          "mixtral-8x22b": 118.33,
+          "embed-api": 39.75,
+          "llama-8b-lora": 33.33,
+          "embedder": 31.67,
+          "notebook": 6.92,
+          "qwen-14b-lora": 4.5
+        }
+      }
+    }
+  },
+  "speedup": 300.0,
+  "runtime_check": {
+    "pods_checked": 17,
+    "median_ratio": 1.0,
+    "min_ratio": 1.0,
+    "max_ratio": 1.0,
+    "ok": true,
+    "reason": ""
+  }
+}
