@@ -1,5 +1,7 @@
 # k8s-gpu-scheduler-benchmark
 
+[![ci](https://github.com/sunilmehta-si/k8s-gpu-scheduler-benchmark/actions/workflows/ci.yml/badge.svg)](https://github.com/sunilmehta-si/k8s-gpu-scheduler-benchmark/actions/workflows/ci.yml) [![cluster](https://github.com/sunilmehta-si/k8s-gpu-scheduler-benchmark/actions/workflows/cluster.yml/badge.svg)](https://github.com/sunilmehta-si/k8s-gpu-scheduler-benchmark/actions/workflows/cluster.yml)
+
 **Which Kubernetes GPU scheduler should you run?** This project answers that with numbers. It replays the same AI
 workload trace (multi-node training gangs, fine-tunes, inference services, notebooks) against each scheduling stack
 and measures what platform teams argue about: GPU utilisation, fragmentation, queue wait, fairness between teams,
@@ -116,6 +118,15 @@ and models no hardware effects. Every modelling choice and its source is in [doc
 | NVIDIA Run:ai full platform, DRA, topology-aware placement | Planned |
 
 Contributions welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Related projects
+
+Other open-source infrastructure work by [Sunil Mehta](https://github.com/sunilmehta-si):
+
+- [agentic-code-review-tool](https://github.com/sunilmehta-si/agentic-code-review-tool): Scanner-grounded AI code review for the whole pull request: app, infrastructure and AI/agent code.
+- [ai-devsecops-cicd](https://github.com/sunilmehta-si/ai-devsecops-cicd): Reference DevSecOps pipeline for LLM and AI-agent services: AI security tests, SBOM/AI-BOM, signing, admission policy.
+- [llm-inference-platform](https://github.com/sunilmehta-si/llm-inference-platform): GPU-backed LLM serving with a streaming gateway, monitoring and reproducible benchmarks.
+- [jev-inference-router](https://github.com/sunilmehta-si/jev-inference-router): Observable decision routing for local GPU inference, evaluated against rule-based and classifier baselines.
 
 ## License
 
