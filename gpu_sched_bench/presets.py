@@ -17,6 +17,10 @@ check on these models.
   placed by kube-scheduler, so placement is spread.
 - volcano: gang plugin (minAvailable), binpack plugin, proportion plugin for queue shares with borrowing
   of idle capacity. Reclaim is configurable but off in the default action list, so it is off here.
+  Known gap, from the first cluster runs: Volcano v1.16's default config also scores with nodeorder
+  (least-requested, which works against binpack), caps queues through proportion and gates admission with
+  overcommit. This preset models none of that and overestimated Volcano by 84% on the smoke trace
+  (results/cluster/README.md).
 - kai: KAI Scheduler gang scheduling of pod groups, bin-packing by default, hierarchical queues with
   fair-share over quota, reclaim of borrowed resources, and priority preemption within a queue.
 """

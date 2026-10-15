@@ -58,6 +58,21 @@ so pods of jobs submitted together interleave, and that's how half-placed gangs 
 - **Seeds matter.** On the 256-GPU fleet the cheapest stack changes between seeds (see the committed sweep), so a
   single trace is an example, not a verdict. Use `gsb sweep`.
 
+## How close is the model?
+
+The first real-scheduler runs ([results/cluster](../results/cluster/README.md); 12-job smoke trace, 32-GPU lab, kind +
+kwok) give a first answer, from one small trace:
+
+| Stack | Time to finish: model | Real scheduler | Read |
+|---|---|---|---|
+| default | 10.6 h | 9.4 h | within 11% |
+| KAI 0.18.5 | 6.9 h | 7.7 h | within 11% |
+| Kueue v0.20.1 | 9.5 h | 7.7 h | the real Kueue did better: admission by quota is not all-or-nothing placement, so it packs more (and strands some GPUs) |
+| Volcano v1.16.0 | 6.9 h | 12.8 h | the model is far off: Volcano's default config combines binpack with nodeorder's least-requested scoring, proportion queue caps and the overcommit admission gate, none of which the preset models |
+
+Use the simulation for reasoning about behaviours and for ranking within a family of choices; use cluster runs before
+deciding between real schedulers. Closing the Volcano gap needs larger traces, not a preset tuned to one 12-job run.
+
 ## Cluster runs
 
 `gsb cluster run` replays a trace against a kind + kwok cluster with the real scheduler installed and writes the same
