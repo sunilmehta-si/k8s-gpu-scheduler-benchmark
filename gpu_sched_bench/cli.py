@@ -49,6 +49,11 @@ def _parser() -> argparse.ArgumentParser:
                     help="setup: namespaces, priorities and queues; jobs: one Job per trace job (default: all).")
     mf.add_argument("--speedup", type=float, default=1.0, help="Divide job durations by this, e.g. 60 (default: 1).")
     mf.add_argument("--quotas", choices=("equal", "none"), default="equal", help="Team quotas (default: equal).")
+    ab = sub.add_parser("ablate", help="Switch behaviours on one at a time to see which one a gain comes from.")
+    ab.add_argument("--fleet", required=True, help="Fleet YAML file.")
+    ab.add_argument("--trace", required=True, help="Trace JSONL file.")
+    ab.add_argument("--quotas", choices=("equal", "none"), default="equal", help="Include the quota steps (default: equal).")
+    ab.add_argument("--output", "-o", help="Write results JSON here instead of stdout.")
     sw = sub.add_parser("sweep", help="Compare stacks over many seeded traces: mean, stdev, min and max per metric.")
     sw.add_argument("--fleet", required=True, help="Fleet YAML file.")
     sw.add_argument("--seeds", default="1-10", help="Seeds as a range or list, e.g. 1-10 or 1,4,7 (default: 1-10).")
@@ -85,6 +90,25 @@ def parse_seeds(text: str) -> list[int]:
     if not seeds:
         raise ValueError("no seeds given")
     return sorted(set(seeds))
+
+
+def _cmd_ablate(args: argparse.Namespace) -> int:
+    from .ablate import run_ablation
+    from .fleet import FleetError, load as load_fleet
+    from .results import dumps
+    from .trace import TraceError, check_fits, load as load_trace
+    try:
+        fleet, jobs = load_fleet(args.fleet), load_trace(args.trace)
+        check_fits(jobs, fleet.max_gpus_per_node)
+    except (FleetError, TraceError, OSError) as exc:
+        print(f"gsb: {exc}", file=sys.stderr)
+        return 2
+    text = dumps(run_ablation(fleet, jobs, args.quotas, trace_name=Path(args.trace).name))
+    if args.output:
+        Path(args.output).write_text(text)
+    else:
+        print(text, end="")
+    return 0
 
 
 def _cmd_sweep(args: argparse.Namespace) -> int:
@@ -257,6 +281,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_cluster(args)
     if args.command == "sweep":
         return _cmd_sweep(args)
+    if args.command == "ablate":
+        return _cmd_ablate(args)
     return 0
 
 
