@@ -49,6 +49,14 @@ def _parser() -> argparse.ArgumentParser:
                     help="setup: namespaces, priorities and queues; jobs: one Job per trace job (default: all).")
     mf.add_argument("--speedup", type=float, default=1.0, help="Divide job durations by this, e.g. 60 (default: 1).")
     mf.add_argument("--quotas", choices=("equal", "none"), default="equal", help="Team quotas (default: equal).")
+    sw = sub.add_parser("sweep", help="Compare stacks over many seeded traces: mean, stdev, min and max per metric.")
+    sw.add_argument("--fleet", required=True, help="Fleet YAML file.")
+    sw.add_argument("--seeds", default="1-10", help="Seeds as a range or list, e.g. 1-10 or 1,4,7 (default: 1-10).")
+    sw.add_argument("--rate", type=float, default=16.0, help="Mean job arrivals per hour (default: 16).")
+    sw.add_argument("--hours", type=float, default=8.0, help="Arrival window in hours (default: 8).")
+    sw.add_argument("--stacks", default="default,kueue,volcano,kai", help="Comma-separated stacks (default: all).")
+    sw.add_argument("--quotas", choices=("equal", "none"), default="equal", help="Team quotas (default: equal).")
+    sw.add_argument("--output", "-o", help="Write the sweep JSON here instead of stdout.")
     cl = sub.add_parser("cluster", help="Run a trace on a real cluster with kwok GPU nodes.")
     csub = cl.add_subparsers(dest="cluster_command", required=True)
     cr = csub.add_parser("run", help="Create kwok nodes, apply the stack's queues, replay the trace, collect results.")
@@ -61,6 +69,46 @@ def _parser() -> argparse.ArgumentParser:
     cr.add_argument("--context", help="kubectl context (default: the current one).")
     cr.add_argument("--output", "-o", help="Write results JSON here instead of stdout.")
     return p
+
+
+def parse_seeds(text: str) -> list[int]:
+    seeds: list[int] = []
+    for part in text.split(","):
+        part = part.strip()
+        if "-" in part:
+            lo, hi = (int(x) for x in part.split("-", 1))
+            if hi < lo:
+                raise ValueError(f"bad seed range '{part}'")
+            seeds.extend(range(lo, hi + 1))
+        elif part:
+            seeds.append(int(part))
+    if not seeds:
+        raise ValueError("no seeds given")
+    return sorted(set(seeds))
+
+
+def _cmd_sweep(args: argparse.Namespace) -> int:
+    import json
+
+    from .fleet import FleetError, load as load_fleet
+    from .presets import STACKS
+    from .sweep import run_sweep
+    stacks = [s.strip() for s in args.stacks.split(",") if s.strip()]
+    try:
+        unknown = [s for s in stacks if s not in STACKS]
+        if unknown:
+            raise ValueError(f"unknown stack(s) {', '.join(unknown)}; choose from {', '.join(STACKS)}")
+        doc = run_sweep(load_fleet(args.fleet), stacks, parse_seeds(args.seeds), args.rate, args.hours, args.quotas)
+    except (FleetError, OSError, ValueError) as exc:
+        print(f"gsb: {exc}", file=sys.stderr)
+        return 2
+    text = json.dumps(doc, indent=2) + "\n"
+    if args.output:
+        Path(args.output).write_text(text)
+        print(f"gsb: wrote a {len(doc['seeds'])}-seed sweep to {args.output}", file=sys.stderr)
+    else:
+        print(text, end="")
+    return 0
 
 
 def _cmd_cluster(args: argparse.Namespace) -> int:
@@ -207,6 +255,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_manifests(args)
     if args.command == "cluster":
         return _cmd_cluster(args)
+    if args.command == "sweep":
+        return _cmd_sweep(args)
     return 0
 
 
