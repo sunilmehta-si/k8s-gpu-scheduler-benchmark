@@ -167,3 +167,27 @@ class CheckpointTests(unittest.TestCase):
         self.assertEqual(r.records["svc"].preemptions, 1)
         self.assertEqual(r.preempted_gpu_s, 0)                  # a service loses nothing but its place
         self.assertEqual(r.records["svc"].end, 4100 + (7200 - 3999))
+
+
+class PriorityPreemptionTests(unittest.TestCase):
+    def jobs(self, team_b="a"):
+        return [job("train", duration=1000, gpus=8, team="a"), job("train2", duration=1000, gpus=8, team=team_b, arrival=1),
+                Job("urgent", 10, "a", "inference", 1, 8, 100, 10, False)]
+
+    def test_global_preemption_evicts_the_newest_lower_priority_job(self):
+        r = simulate(FLEET, self.jobs(), Policy("p", priority_preemption="global"))
+        self.assertEqual(r.records["urgent"].start, 10)
+        self.assertEqual(r.records["train2"].preemptions, 1)       # same priority: the most recently placed goes
+        self.assertEqual(r.records["train"].preemptions, 0)
+
+    def test_team_scope_protects_other_teams(self):
+        r = simulate(FLEET, self.jobs(team_b="b"), Policy("p", gang=True, priority_preemption="team"))
+        self.assertEqual(r.records["urgent"].start, 10)
+        self.assertEqual(r.records["train"].preemptions, 1)        # team a's own lower-priority job
+        self.assertEqual(r.records["train2"].preemptions, 0)
+
+    def test_no_preemption_means_waiting(self):
+        r = simulate(FLEET, self.jobs(), Policy("p"))
+        self.assertEqual(r.records["urgent"].start, 1000)
+        with self.assertRaises(ValueError):
+            Policy("bad", priority_preemption="sometimes")

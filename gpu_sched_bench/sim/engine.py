@@ -211,7 +211,8 @@ class Simulator:
                 rec.nodes[i] = rec.replica_start[i] = rec.held_since[i] = rec.placed_at[i] = None
         rec.epoch += 1
         rec.preemptions += 1
-        self.pending.append(rec.job.id)
+        if rec.job.id not in self.pending:
+            self.pending.append(rec.job.id)
 
     def _reclaim_for(self, rec: JobRecord, need: int, fits) -> bool:
         """Evict borrowers (lowest priority, most recently started first) until `rec` is admissible and fits.
@@ -240,6 +241,29 @@ class Simulator:
                 return True
         return False
 
+    def _preempt_lower(self, rec: JobRecord, fits) -> bool:
+        """Evict lower-priority jobs (in the same team, or anywhere) until `rec` fits; lowest priority and most
+        recently started first. Nothing is evicted unless the full set of evictions lets `rec` start."""
+        scope = self.policy.priority_preemption
+        if scope == "none":
+            return False
+        candidates = [r for r in self.records.values()
+                      if r is not rec and r.placed and r.end is None and r.job.priority < rec.job.priority
+                      and (scope == "global" or r.job.team == rec.job.team)]
+        candidates.sort(key=lambda r: (r.job.priority, -max((t for t in r.placed_at if t is not None), default=0), r.job.id))
+        free = {n.name: n.free for n in self.nodes}
+        victims = []
+        for v in candidates:
+            victims.append(v)
+            for x in v.nodes:
+                if x is not None:
+                    free[x] += v.job.gpus_per_replica
+            if fits(free):
+                for victim in victims:
+                    self._preempt(victim)
+                return True
+        return False
+
     def _schedule_jobs(self) -> None:
         """Job by job in priority then arrival order; with gang on, gang jobs are placed all-or-nothing.
         In a strict queue the first job that can't be fully placed stops the pass (head-of-line blocking)."""
@@ -253,6 +277,8 @@ class Simulator:
                 if plan is None and self.policy.reclaim and \
                         self._reclaim_for(rec, need, lambda free: self._fit_all(rec, free) is not None):
                     plan = self._fit_all(rec)
+                if plan is None and self._preempt_lower(rec, lambda free: self._fit_all(rec, free) is not None):
+                    plan = self._fit_all(rec) if self._admissible(rec.job.team, need) else None
                 if plan is not None:
                     for i, node in zip([k for k, n in enumerate(rec.nodes) if n is None], plan):
                         self._place_replica(rec, i, node)
@@ -265,6 +291,9 @@ class Simulator:
                         if choice is None and self.policy.reclaim and \
                                 self._reclaim_for(rec, need, lambda free: self._choose(need, free) is not None):
                             choice = self._choose(need, {n.name: n.free for n in self.nodes})
+                        if choice is None and self._preempt_lower(rec, lambda free: self._choose(need, free) is not None):
+                            current = {n.name: n.free for n in self.nodes}
+                            choice = self._choose(need, current) if self._admissible(rec.job.team, need) else None
                         if choice is None:
                             break
                         self._place_replica(rec, i, choice)
@@ -278,7 +307,12 @@ class Simulator:
                                  self.records[p[0]].job.arrival_s + p[1] * POD_CREATE_INTERVAL_S, p[0], p[1]))
         for job_id, i in pods:
             rec = self.records[job_id]
-            node = self._choose(rec.job.gpus_per_replica, {n.name: n.free for n in self.nodes})
+            if rec.nodes[i] is not None:
+                continue
+            need = rec.job.gpus_per_replica
+            node = self._choose(need, {n.name: n.free for n in self.nodes})
+            if node is None and self._preempt_lower(rec, lambda free: self._choose(need, free) is not None):
+                node = self._choose(need, {n.name: n.free for n in self.nodes})   # kube-scheduler preemption
             if node is not None:
                 self._place_replica(rec, i, node)
 

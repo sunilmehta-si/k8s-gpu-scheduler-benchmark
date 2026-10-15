@@ -42,157 +42,35 @@
         "gang": false,
         "quotas": {},
         "borrowing": false,
-        "reclaim": false
+        "reclaim": false,
+        "priority_preemption": "global"
       },
-      "makespan_h": 10.03,
+      "makespan_h": 13.21,
       "jobs": 26,
       "jobs_finished": 26,
       "deadlocked": false,
-      "utilisation": 0.7773,
-      "useful_utilisation": 0.77,
-      "stranded_gpu_h": 2.4,
-      "preempted_gpu_h": 0.0,
-      "queue_wait": {
-        "jobs": 26,
-        "p50_min": 0.0,
-        "p95_min": 188.4,
-        "max_min": 258.3
-      },
-      "queue_wait_by_kind": {
-        "finetune": {
-          "jobs": 8,
-          "p50_min": 0.0,
-          "p95_min": 258.3,
-          "max_min": 258.3
-        },
-        "inference": {
-          "jobs": 8,
-          "p50_min": 0.0,
-          "p95_min": 71.3,
-          "max_min": 71.3
-        },
-        "notebook": {
-          "jobs": 6,
-          "p50_min": 0.0,
-          "p95_min": 30.6,
-          "max_min": 30.6
-        },
-        "training": {
-          "jobs": 4,
-          "p50_min": 76.8,
-          "p95_min": 188.4,
-          "max_min": 188.4
-        }
-      },
-      "fragmentation": {
-        "idle_while_waiting_gpu_h": 36.8,
-        "stranded_by_size": 1.0,
-        "scattered_free": 0.3789,
-        "partial_nodes": 0.2241
-      },
-      "fairness": {
-        "jain_service": 0.9714,
-        "jain_served_share": 1.0,
-        "teams": {
-          "platform": {
-            "jobs": 6,
-            "requested_gpu_h": 31.1,
-            "service": 0.9992,
-            "served_share": 1.0,
-            "never_started": 0,
-            "preemptions": 0,
-            "p50_min": 0.0,
-            "p95_min": 0.6,
-            "max_min": 0.6
-          },
-          "product": {
-            "jobs": 11,
-            "requested_gpu_h": 83.4,
-            "service": 0.7178,
-            "served_share": 1.0,
-            "never_started": 0,
-            "preemptions": 0,
-            "p50_min": 0.0,
-            "p95_min": 258.3,
-            "max_min": 258.3
-          },
-          "research": {
-            "jobs": 9,
-            "requested_gpu_h": 132.6,
-            "service": 0.6965,
-            "served_share": 1.0,
-            "never_started": 0,
-            "preemptions": 0,
-            "p50_min": 26.9,
-            "p95_min": 164.9,
-            "max_min": 164.9
-          }
-        }
-      },
-      "cost": {
-        "total": 561.51,
-        "idle": 81.73,
-        "stranded": 5.89,
-        "preempted_work": 0.0,
-        "per_useful_gpu_h": 2.273,
-        "by_team": {
-          "platform": 31.07,
-          "product": 142.75,
-          "research": 305.96
-        },
-        "by_model": {
-          "llama-70b": 360.32,
-          "rerank-api": 39.16,
-          "embed-api": 25.09,
-          "chat-api": 13.18,
-          "embedder": 12.98,
-          "qwen-14b-lora": 10.72,
-          "mixtral-8x22b": 10.63,
-          "llama-8b-lora": 5.6,
-          "notebook": 2.09
-        }
-      }
-    },
-    "kueue": {
-      "policy": {
-        "name": "kueue",
-        "placement": "spread",
-        "queue": "best-effort",
-        "gang": true,
-        "quotas": {
-          "platform": 0.3333333333333333,
-          "product": 0.3333333333333333,
-          "research": 0.3333333333333333
-        },
-        "borrowing": true,
-        "reclaim": true
-      },
-      "makespan_h": 15.59,
-      "jobs": 26,
-      "jobs_finished": 26,
-      "deadlocked": false,
-      "utilisation": 0.5084,
-      "useful_utilisation": 0.5084,
-      "stranded_gpu_h": 0.0,
+      "utilisation": 0.6191,
+      "useful_utilisation": 0.6,
+      "stranded_gpu_h": 8.1,
       "preempted_gpu_h": 6.5,
       "queue_wait": {
         "jobs": 26,
         "p50_min": 0.0,
-        "p95_min": 535.6,
-        "max_min": 627.4
+        "p95_min": 451.6,
+        "max_min": 453.2
       },
       "queue_wait_by_kind": {
         "finetune": {
           "jobs": 8,
           "p50_min": 0.0,
-          "p95_min": 159.8,
-          "max_min": 159.8
+          "p95_min": 453.2,
+          "max_min": 453.2
         },
         "inference": {
           "jobs": 8,
           "p50_min": 0.0,
-          "p95_min": 83.1,
-          "max_min": 83.1
+          "p95_min": 0.0,
+          "max_min": 0.0
         },
         "notebook": {
           "jobs": 6,
@@ -202,19 +80,19 @@
         },
         "training": {
           "jobs": 4,
-          "p50_min": 123.0,
-          "p95_min": 627.4,
-          "max_min": 627.4
+          "p50_min": 359.8,
+          "p95_min": 451.6,
+          "max_min": 451.6
         }
       },
       "fragmentation": {
-        "idle_while_waiting_gpu_h": 192.1,
-        "stranded_by_size": 0.8583,
-        "scattered_free": 0.2432,
-        "partial_nodes": 0.2185
+        "idle_while_waiting_gpu_h": 126.9,
+        "stranded_by_size": 1.0,
+        "scattered_free": 0.283,
+        "partial_nodes": 0.2355
       },
       "fairness": {
-        "jain_service": 0.985,
+        "jain_service": 0.9879,
         "jain_served_share": 1.0,
         "teams": {
           "platform": {
@@ -231,10 +109,134 @@
           "product": {
             "jobs": 11,
             "requested_gpu_h": 83.4,
-            "service": 0.839,
+            "service": 0.8178,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 453.2,
+            "max_min": 453.2
+          },
+          "research": {
+            "jobs": 9,
+            "requested_gpu_h": 132.6,
+            "service": 0.7803,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 1,
+            "p50_min": 0.0,
+            "p95_min": 451.6,
+            "max_min": 451.6
+          }
+        }
+      },
+      "cost": {
+        "total": 739.61,
+        "idle": 191.91,
+        "stranded": 20.17,
+        "preempted_work": 16.32,
+        "per_useful_gpu_h": 2.994,
+        "by_team": {
+          "platform": 36.66,
+          "product": 168.25,
+          "research": 342.8
+        },
+        "by_model": {
+          "llama-70b": 390.93,
+          "embed-api": 49.6,
+          "rerank-api": 39.16,
+          "chat-api": 16.23,
+          "qwen-14b-lora": 13.26,
+          "embedder": 12.98,
+          "llama-8b-lora": 11.33,
+          "mixtral-8x22b": 10.63,
+          "notebook": 3.6
+        }
+      }
+    },
+    "kueue": {
+      "policy": {
+        "name": "kueue",
+        "placement": "spread",
+        "queue": "best-effort",
+        "gang": true,
+        "quotas": {
+          "platform": 0.3333333333333333,
+          "product": 0.3333333333333333,
+          "research": 0.3333333333333333
+        },
+        "borrowing": true,
+        "reclaim": true,
+        "priority_preemption": "team"
+      },
+      "makespan_h": 15.2,
+      "jobs": 26,
+      "jobs_finished": 26,
+      "deadlocked": false,
+      "utilisation": 0.5158,
+      "useful_utilisation": 0.5158,
+      "stranded_gpu_h": 0.0,
+      "preempted_gpu_h": 3.9,
+      "queue_wait": {
+        "jobs": 26,
+        "p50_min": 0.0,
+        "p95_min": 512.5,
+        "max_min": 544.3
+      },
+      "queue_wait_by_kind": {
+        "finetune": {
+          "jobs": 8,
+          "p50_min": 0.0,
+          "p95_min": 159.8,
+          "max_min": 159.8
+        },
+        "inference": {
+          "jobs": 8,
+          "p50_min": 0.0,
+          "p95_min": 0.0,
+          "max_min": 0.0
+        },
+        "notebook": {
+          "jobs": 6,
+          "p50_min": 0.0,
+          "p95_min": 0.0,
+          "max_min": 0.0
+        },
+        "training": {
+          "jobs": 4,
+          "p50_min": 93.0,
+          "p95_min": 544.3,
+          "max_min": 544.3
+        }
+      },
+      "fragmentation": {
+        "idle_while_waiting_gpu_h": 182.4,
+        "stranded_by_size": 0.8852,
+        "scattered_free": 0.2571,
+        "partial_nodes": 0.2295
+      },
+      "fairness": {
+        "jain_service": 0.9879,
+        "jain_served_share": 1.0,
+        "teams": {
+          "platform": {
+            "jobs": 6,
+            "requested_gpu_h": 31.1,
+            "service": 1.0,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 0.0,
+            "max_min": 0.0
+          },
+          "product": {
+            "jobs": 11,
+            "requested_gpu_h": 83.4,
+            "service": 0.8435,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 1,
             "p50_min": 0.0,
             "p95_min": 159.8,
             "max_min": 159.8
@@ -242,37 +244,37 @@
           "research": {
             "jobs": 9,
             "requested_gpu_h": 132.6,
-            "service": 0.7426,
+            "service": 0.7691,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 1,
             "p50_min": 0.0,
-            "p95_min": 627.4,
-            "max_min": 627.4
+            "p95_min": 544.3,
+            "max_min": 544.3
           }
         }
       },
       "cost": {
-        "total": 872.83,
-        "idle": 334.71,
+        "total": 851.29,
+        "idle": 316.63,
         "stranded": 0.0,
-        "preempted_work": 16.32,
-        "per_useful_gpu_h": 3.533,
+        "preempted_work": 9.67,
+        "per_useful_gpu_h": 3.446,
         "by_team": {
-          "platform": 36.66,
-          "product": 156.23,
-          "research": 345.23
+          "platform": 33.6,
+          "product": 162.99,
+          "research": 338.06
         },
         "by_model": {
-          "llama-70b": 370.76,
-          "embed-api": 43.47,
+          "llama-70b": 363.34,
+          "embed-api": 49.6,
           "rerank-api": 39.16,
-          "chat-api": 32.94,
+          "chat-api": 29.89,
+          "embedder": 13.75,
           "qwen-14b-lora": 13.26,
-          "embedder": 12.98,
           "llama-8b-lora": 11.33,
           "mixtral-8x22b": 10.63,
-          "notebook": 3.6
+          "notebook": 3.71
         }
       }
     },
@@ -288,7 +290,8 @@
           "research": 0.3333333333333333
         },
         "borrowing": true,
-        "reclaim": false
+        "reclaim": false,
+        "priority_preemption": "none"
       },
       "makespan_h": 12.09,
       "jobs": 26,
@@ -411,34 +414,35 @@
           "research": 0.3333333333333333
         },
         "borrowing": true,
-        "reclaim": true
+        "reclaim": true,
+        "priority_preemption": "team"
       },
-      "makespan_h": 15.09,
+      "makespan_h": 13.16,
       "jobs": 26,
       "jobs_finished": 26,
       "deadlocked": false,
-      "utilisation": 0.5218,
-      "useful_utilisation": 0.5218,
+      "utilisation": 0.5882,
+      "useful_utilisation": 0.5882,
       "stranded_gpu_h": 0.0,
-      "preempted_gpu_h": 4.8,
+      "preempted_gpu_h": 0.6,
       "queue_wait": {
         "jobs": 26,
         "p50_min": 0.0,
-        "p95_min": 505.6,
-        "max_min": 627.4
+        "p95_min": 389.8,
+        "max_min": 451.6
       },
       "queue_wait_by_kind": {
         "finetune": {
           "jobs": 8,
           "p50_min": 0.0,
-          "p95_min": 202.7,
-          "max_min": 202.7
+          "p95_min": 154.8,
+          "max_min": 154.8
         },
         "inference": {
           "jobs": 8,
           "p50_min": 0.0,
-          "p95_min": 83.1,
-          "max_min": 83.1
+          "p95_min": 0.0,
+          "max_min": 0.0
         },
         "notebook": {
           "jobs": 6,
@@ -448,19 +452,19 @@
         },
         "training": {
           "jobs": 4,
-          "p50_min": 165.9,
-          "p95_min": 627.4,
-          "max_min": 627.4
+          "p50_min": 88.0,
+          "p95_min": 451.6,
+          "max_min": 451.6
         }
       },
       "fragmentation": {
-        "idle_while_waiting_gpu_h": 171.3,
-        "stranded_by_size": 0.8976,
-        "scattered_free": 0.2542,
-        "partial_nodes": 0.191
+        "idle_while_waiting_gpu_h": 113.8,
+        "stranded_by_size": 0.8421,
+        "scattered_free": 0.2187,
+        "partial_nodes": 0.1818
       },
       "fairness": {
-        "jain_service": 0.9853,
+        "jain_service": 0.9893,
         "jain_served_share": 1.0,
         "teams": {
           "platform": {
@@ -477,44 +481,44 @@
           "product": {
             "jobs": 11,
             "requested_gpu_h": 83.4,
-            "service": 0.8456,
+            "service": 0.8584,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 1,
             "p50_min": 0.0,
-            "p95_min": 202.7,
-            "max_min": 202.7
+            "p95_min": 154.8,
+            "max_min": 154.8
           },
           "research": {
             "jobs": 9,
             "requested_gpu_h": 132.6,
-            "service": 0.7435,
+            "service": 0.7788,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 1,
             "p50_min": 0.0,
-            "p95_min": 627.4,
-            "max_min": 627.4
+            "p95_min": 451.6,
+            "max_min": 451.6
           }
         }
       },
       "cost": {
-        "total": 844.83,
-        "idle": 315.51,
+        "total": 736.74,
+        "idle": 228.64,
         "stranded": 0.0,
-        "preempted_work": 12.09,
-        "per_useful_gpu_h": 3.42,
+        "preempted_work": 1.45,
+        "per_useful_gpu_h": 2.982,
         "by_team": {
           "platform": 34.12,
-          "product": 159.36,
-          "research": 335.84
+          "product": 162.27,
+          "research": 311.71
         },
         "by_model": {
-          "llama-70b": 362.54,
-          "embed-api": 43.47,
+          "llama-70b": 355.12,
+          "embed-api": 49.6,
           "rerank-api": 39.16,
-          "chat-api": 32.94,
-          "embedder": 15.79,
+          "chat-api": 16.23,
+          "embedder": 12.58,
           "llama-8b-lora": 11.33,
           "qwen-14b-lora": 10.72,
           "mixtral-8x22b": 10.63,

@@ -49,7 +49,8 @@
         "gang": false,
         "quotas": {},
         "borrowing": false,
-        "reclaim": false
+        "reclaim": false,
+        "priority_preemption": "global"
       },
       "makespan_h": 26.03,
       "jobs": 131,
@@ -173,7 +174,8 @@
           "research": 0.3333333333333333
         },
         "borrowing": true,
-        "reclaim": true
+        "reclaim": true,
+        "priority_preemption": "team"
       },
       "makespan_h": 26.85,
       "jobs": 131,
@@ -297,7 +299,8 @@
           "research": 0.3333333333333333
         },
         "borrowing": true,
-        "reclaim": false
+        "reclaim": false,
+        "priority_preemption": "none"
       },
       "makespan_h": 19.93,
       "jobs": 131,
@@ -421,7 +424,8 @@
           "research": 0.3333333333333333
         },
         "borrowing": true,
-        "reclaim": true
+        "reclaim": true,
+        "priority_preemption": "team"
       },
       "makespan_h": 19.93,
       "jobs": 131,

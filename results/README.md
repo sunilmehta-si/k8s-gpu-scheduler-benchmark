@@ -46,34 +46,34 @@
 |---|---|---|---|---|
 | Jobs finished <sub>higher is better</sub> | 26/26 | 26/26 | 26/26 | 26/26 |
 | Deadlocked <sub>lower is better</sub> | no | no | no | no |
-| Makespan (h) <sub>lower is better</sub> | **10.0** | 15.6 | 12.1 | 15.1 |
-| GPU utilisation <sub>higher is better</sub> | **77.7%** | 50.8% | 63.9% | 52.2% |
-| Useful utilisation <sub>higher is better</sub> | **77.0%** | 50.8% | 63.9% | 52.2% |
+| Makespan (h) <sub>lower is better</sub> | 13.2 | 15.2 | **12.1** | 13.2 |
+| GPU utilisation <sub>higher is better</sub> | 61.9% | 51.6% | **63.9%** | 58.8% |
+| Useful utilisation <sub>higher is better</sub> | 60.0% | 51.6% | **63.9%** | 58.8% |
 | Queue wait p50 (min) <sub>lower is better</sub> | 0.0 | 0.0 | 0.0 | 0.0 |
-| Queue wait p95 (min) <sub>lower is better</sub> | 188.4 | 535.6 | **134.2** | 505.6 |
-| Training wait p95 (min) <sub>lower is better</sub> | **188.4** | 627.4 | 212.2 | 627.4 |
-| Notebook wait p95 (min) <sub>lower is better</sub> | 30.6 | **0.0** | 30.6 | **0.0** |
-| Stranded GPU-hours <sub>lower is better</sub> | 2.4 | **0.0** | **0.0** | **0.0** |
-| Preempted work (GPU-h) <sub>lower is better</sub> | **0.0** | 6.5 | **0.0** | 4.8 |
-| GPU-h idle while work waited <sub>lower is better</sub> | 36.8 | 192.1 | **29.0** | 171.3 |
-| Idle GPUs too small for waiting work <sub>lower is better</sub> | 100.0% | **85.8%** | 88.1% | 89.8% |
-| Partly used nodes (fragmentation) <sub>lower is better</sub> | 22.4% | 21.9% | 23.0% | **19.1%** |
-| Fairness between teams (Jain) <sub>higher is better</sub> | 0.971 | 0.985 | 0.970 | **0.985** |
-| Fleet cost until the last job finished <sub>lower is better</sub> | **$562** | $873 | $677 | $845 |
-| Cost per useful GPU-hour <sub>lower is better</sub> | **$2.27** | $3.53 | $2.74 | $3.42 |
+| Queue wait p95 (min) <sub>lower is better</sub> | 451.6 | 512.5 | **134.2** | 389.8 |
+| Training wait p95 (min) <sub>lower is better</sub> | 451.6 | 544.3 | **212.2** | 451.6 |
+| Notebook wait p95 (min) <sub>lower is better</sub> | **0.0** | **0.0** | 30.6 | **0.0** |
+| Stranded GPU-hours <sub>lower is better</sub> | 8.1 | **0.0** | **0.0** | **0.0** |
+| Preempted work (GPU-h) <sub>lower is better</sub> | 6.5 | 3.9 | **0.0** | 0.6 |
+| GPU-h idle while work waited <sub>lower is better</sub> | 126.9 | 182.4 | **29.0** | 113.8 |
+| Idle GPUs too small for waiting work <sub>lower is better</sub> | 100.0% | 88.5% | 88.1% | **84.2%** |
+| Partly used nodes (fragmentation) <sub>lower is better</sub> | 23.5% | 22.9% | 23.0% | **18.2%** |
+| Fairness between teams (Jain) <sub>higher is better</sub> | 0.988 | 0.988 | 0.970 | **0.989** |
+| Fleet cost until the last job finished <sub>lower is better</sub> | $740 | $851 | **$677** | $737 |
+| Cost per useful GPU-hour <sub>lower is better</sub> | $2.99 | $3.45 | **$2.74** | $2.98 |
 
 **Queue wait p95 by team (min)**
 
 | Team | default | kueue | volcano | kai |
 |---|---|---|---|---|
-| platform | 0.6 | 0.0 | 0.6 | 0.0 |
-| product | 258.3 | 159.8 | 134.2 | 202.7 |
-| research | 164.9 | 627.4 | 212.2 | 627.4 |
+| platform | 0.0 | 0.0 | 0.6 | 0.0 |
+| product | 453.2 | 159.8 | 134.2 | 154.8 |
+| research | 451.6 | 544.3 | 212.2 | 451.6 |
 
 **GPU cost by team**
 
 | Team | default | kueue | volcano | kai |
 |---|---|---|---|---|
-| platform | $31 | $37 | $31 | $34 |
-| product | $143 | $156 | $137 | $159 |
-| research | $306 | $345 | $311 | $336 |
+| platform | $37 | $34 | $31 | $34 |
+| product | $168 | $163 | $137 | $162 |
+| research | $343 | $338 | $311 | $312 |

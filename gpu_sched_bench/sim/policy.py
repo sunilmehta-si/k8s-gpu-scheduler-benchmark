@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 
 PLACEMENTS = ("spread", "binpack")
 QUEUES = ("best-effort", "strict")
+PRIORITY_PREEMPTION = ("none", "team", "global")
 
 
 @dataclass(frozen=True)
@@ -18,6 +19,7 @@ class Policy:
     quotas: dict[str, float] = field(default_factory=dict)  # team -> guaranteed share of the fleet's GPUs
     borrowing: bool = False         # a team may use other teams' unused quota (Kueue cohorts, KAI/Volcano queues)
     reclaim: bool = False           # a team within its quota evicts borrowers to get its GPUs back
+    priority_preemption: str = "none"  # a job evicts lower-priority jobs: in its own team, anywhere, or never
 
     def __post_init__(self):
         if self.placement not in PLACEMENTS:
@@ -28,5 +30,7 @@ class Policy:
             raise ValueError("quota shares must be >= 0 and add up to at most 1.0")
         if self.borrowing and not self.quotas:
             raise ValueError("borrowing needs quotas")
+        if self.priority_preemption not in PRIORITY_PREEMPTION:
+            raise ValueError(f"priority_preemption must be one of {', '.join(PRIORITY_PREEMPTION)}")
         if self.reclaim and not self.borrowing:
             raise ValueError("reclaim needs borrowing (there is nothing to reclaim otherwise)")
