@@ -49,6 +49,9 @@ def _parser() -> argparse.ArgumentParser:
                     help="setup: namespaces, priorities and queues; jobs: one Job per trace job (default: all).")
     mf.add_argument("--speedup", type=float, default=1.0, help="Divide job durations by this, e.g. 60 (default: 1).")
     mf.add_argument("--quotas", choices=("equal", "none"), default="equal", help="Team quotas (default: equal).")
+    cm = sub.add_parser("compare", help="Put a simulation next to a cluster run of the same stack and trace.")
+    cm.add_argument("model", help="Results JSON from gsb simulate.")
+    cm.add_argument("cluster", help="Results JSON from gsb cluster run.")
     ab = sub.add_parser("ablate", help="Switch behaviours on one at a time to see which one a gain comes from.")
     ab.add_argument("--fleet", required=True, help="Fleet YAML file.")
     ab.add_argument("--trace", required=True, help="Trace JSONL file.")
@@ -92,6 +95,18 @@ def parse_seeds(text: str) -> list[int]:
     if not seeds:
         raise ValueError("no seeds given")
     return sorted(set(seeds))
+
+
+def _cmd_compare(args: argparse.Namespace) -> int:
+    import json
+
+    from .compare import compare
+    try:
+        print(compare(json.loads(Path(args.model).read_text()), json.loads(Path(args.cluster).read_text())), end="")
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"gsb: {exc}", file=sys.stderr)
+        return 2
+    return 0
 
 
 def _cmd_ablate(args: argparse.Namespace) -> int:
@@ -288,6 +303,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_sweep(args)
     if args.command == "ablate":
         return _cmd_ablate(args)
+    if args.command == "compare":
+        return _cmd_compare(args)
     return 0
 
 
