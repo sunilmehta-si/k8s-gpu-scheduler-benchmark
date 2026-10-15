@@ -49,3 +49,17 @@ def run_sweep(fleet: Fleet, stacks: list[str], seeds: list[int], rate: float, ho
     return {"schema_version": 1, "tool_version": __version__, "mode": "simulation-sweep",
             "fleet": {"name": fleet.name, "gpus": fleet.total_gpus}, "rate_per_hour": rate, "hours": hours,
             "seeds": seeds, "quotas": quotas, "summary": summary, "cheapest_wins": wins, "per_seed": per_seed}
+
+
+def load_curve(fleet: Fleet, stacks: list[str], seeds: list[int], rates: list[float], hours: float = 8.0,
+               quotas: str = "equal") -> dict:
+    """The same multi-seed comparison at several arrival rates: how each stack degrades as the fleet gets busier."""
+    points = []
+    for rate in rates:
+        sweep = run_sweep(fleet, stacks, seeds, rate, hours, quotas)
+        points.append({"rate_per_hour": rate,
+                       "summary": {s: {k: v["mean"] for k, v in sweep["summary"][s].items()} for s in stacks},
+                       "cheapest_wins": sweep["cheapest_wins"]})
+    return {"schema_version": 1, "tool_version": __version__, "mode": "simulation-load-curve",
+            "fleet": {"name": fleet.name, "gpus": fleet.total_gpus}, "hours": hours, "seeds": seeds, "quotas": quotas,
+            "points": points}

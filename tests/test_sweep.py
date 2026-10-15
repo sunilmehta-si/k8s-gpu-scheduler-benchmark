@@ -56,3 +56,16 @@ class SweepReportTests(unittest.TestCase):
         self.assertIn("| Metric | default | kai |", md)
         self.assertIn(" ± ", md)
         self.assertIn("/2 seeds", md)
+
+
+class LoadCurveTests(unittest.TestCase):
+    def test_points_per_rate_and_markdown(self):
+        from gpu_sched_bench.report import to_markdown
+        from gpu_sched_bench.sweep import load_curve
+        curve = load_curve(FLEET, ["default", "kai"], seeds=[1, 2], rates=[3, 9], hours=2)
+        self.assertEqual([p["rate_per_hour"] for p in curve["points"]], [3, 9])
+        busy, quiet = curve["points"][1]["summary"]["default"], curve["points"][0]["summary"]["default"]
+        self.assertGreaterEqual(busy["queue_wait_p95_min"], quiet["queue_wait_p95_min"])   # busier fleet, longer waits
+        md = to_markdown(curve)
+        self.assertIn("load curve", md)
+        self.assertIn("| Jobs/hour | default | kai |", md)

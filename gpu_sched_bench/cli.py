@@ -67,6 +67,7 @@ def _parser() -> argparse.ArgumentParser:
     sw.add_argument("--fleet", required=True, help="Fleet YAML file.")
     sw.add_argument("--seeds", default="1-10", help="Seeds as a range or list, e.g. 1-10 or 1,4,7 (default: 1-10).")
     sw.add_argument("--rate", type=float, default=16.0, help="Mean job arrivals per hour (default: 16).")
+    sw.add_argument("--rates", help="Several rates, e.g. 8,12,16,20: writes a load curve instead of one sweep.")
     sw.add_argument("--hours", type=float, default=8.0, help="Arrival window in hours (default: 8).")
     sw.add_argument("--stacks", default="default,kueue,volcano,kai", help="Comma-separated stacks (default: all).")
     sw.add_argument("--quotas", choices=("equal", "none"), default="equal", help="Team quotas (default: equal).")
@@ -158,14 +159,20 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
         unknown = [s for s in stacks if s not in STACKS]
         if unknown:
             raise ValueError(f"unknown stack(s) {', '.join(unknown)}; choose from {', '.join(STACKS)}")
-        doc = run_sweep(load_fleet(args.fleet), stacks, parse_seeds(args.seeds), args.rate, args.hours, args.quotas)
+        if args.rates:
+            from .sweep import load_curve
+            rates = [float(r) for r in args.rates.split(",") if r.strip()]
+            doc = load_curve(load_fleet(args.fleet), stacks, parse_seeds(args.seeds), rates, args.hours, args.quotas)
+        else:
+            doc = run_sweep(load_fleet(args.fleet), stacks, parse_seeds(args.seeds), args.rate, args.hours, args.quotas)
     except (FleetError, OSError, ValueError) as exc:
         print(f"gsb: {exc}", file=sys.stderr)
         return 2
     text = json.dumps(doc, indent=2) + "\n"
     if args.output:
         Path(args.output).write_text(text)
-        print(f"gsb: wrote a {len(doc['seeds'])}-seed sweep to {args.output}", file=sys.stderr)
+        print(f"gsb: wrote a {len(doc['seeds'])}-seed {'load curve' if args.rates else 'sweep'} to {args.output}",
+              file=sys.stderr)
     else:
         print(text, end="")
     return 0

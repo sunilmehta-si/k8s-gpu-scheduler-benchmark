@@ -79,7 +79,24 @@ def sweep_to_markdown(sweep: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def load_curve_to_markdown(curve: dict) -> str:
+    stacks = list(curve["points"][0]["summary"]) if curve["points"] else []
+    n = len(curve["seeds"])
+    lines = [f"## {curve['fleet']['name']}: load curve, mean of {n} seeded traces per rate", "",
+             "> Reference simulation. Each cell is the mean over the seeds at that arrival rate.", ""]
+    for label, key, fmt in (("Cost per useful GPU-hour", "cost_per_useful_gpu_h", lambda v: f"${v:.2f}"),
+                            ("Queue wait p95 (min)", "queue_wait_p95_min", lambda v: f"{v:.0f}"),
+                            ("Useful utilisation", "useful_utilisation", lambda v: f"{v:.1%}")):
+        lines += [f"**{label}**", "", "| Jobs/hour | " + " | ".join(stacks) + " |", "|---|" + "---|" * len(stacks)]
+        for point in curve["points"]:
+            lines.append(f"| {point['rate_per_hour']:g} | " + " | ".join(fmt(point["summary"][s][key]) for s in stacks) + " |")
+        lines.append("")
+    return "\n".join(lines)
+
+
 def to_markdown(results: dict) -> str:
+    if results.get("mode") == "simulation-load-curve":
+        return load_curve_to_markdown(results)
     if results.get("mode") == "simulation-sweep":
         return sweep_to_markdown(results)
     stacks = results["stacks"]
