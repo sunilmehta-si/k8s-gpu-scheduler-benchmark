@@ -1,0 +1,12 @@
+{"id":"notebook-00001","arrival_s":107.9,"team":"research","kind":"notebook","replicas":1,"gpus_per_replica":1,"duration_s":2325.3,"priority":5,"gang":false,"model":"notebook"}
+{"id":"finetune-00002","arrival_s":476.7,"team":"product","kind":"finetune","replicas":1,"gpus_per_replica":8,"duration_s":4302.9,"priority":0,"gang":false,"model":"llama-8b-lora"}
+{"id":"notebook-00003","arrival_s":680.0,"team":"platform","kind":"notebook","replicas":1,"gpus_per_replica":1,"duration_s":1658.4,"priority":5,"gang":false,"model":"notebook"}
+{"id":"notebook-00004","arrival_s":1310.3,"team":"research","kind":"notebook","replicas":1,"gpus_per_replica":1,"duration_s":2968.6,"priority":5,"gang":false,"model":"notebook"}
+{"id":"notebook-00005","arrival_s":1550.5,"team":"research","kind":"notebook","replicas":1,"gpus_per_replica":1,"duration_s":961.3,"priority":5,"gang":false,"model":"notebook"}
+{"id":"inference-00006","arrival_s":1703.3,"team":"product","kind":"inference","replicas":2,"gpus_per_replica":1,"duration_s":23252.3,"priority":10,"gang":false,"model":"embed-api"}
+{"id":"training-00007","arrival_s":2200.1,"team":"product","kind":"training","replicas":2,"gpus_per_replica":8,"duration_s":9148.2,"priority":0,"gang":true,"model":"mixtral-8x22b"}
+{"id":"finetune-00008","arrival_s":2367.1,"team":"product","kind":"finetune","replicas":1,"gpus_per_replica":8,"duration_s":4117.1,"priority":0,"gang":false,"model":"embedder"}
+{"id":"finetune-00009","arrival_s":2463.7,"team":"platform","kind":"finetune","replicas":1,"gpus_per_replica":2,"duration_s":6709.1,"priority":0,"gang":false,"model":"qwen-14b-lora"}
+{"id":"inference-00010","arrival_s":2464.5,"team":"product","kind":"inference","replicas":4,"gpus_per_replica":1,"duration_s":21203.5,"priority":10,"gang":false,"model":"embed-api"}
+{"id":"notebook-00011","arrival_s":3120.1,"team":"platform","kind":"notebook","replicas":1,"gpus_per_replica":1,"duration_s":6404.8,"priority":5,"gang":false,"model":"notebook"}
+{"id":"notebook-00012","arrival_s":3560.1,"team":"platform","kind":"notebook","replicas":1,"gpus_per_replica":1,"duration_s":452.0,"priority":5,"gang":false,"model":"notebook"}
