@@ -52,6 +52,13 @@ class Fleet:
     def max_gpus_per_node(self) -> int:
         return max(p.gpus_per_node for p in self.pools)
 
+    @property
+    def max_gpus_by_model(self) -> dict[str, int]:
+        out: dict[str, int] = {}
+        for p in self.pools:
+            out[p.gpu_model] = max(out.get(p.gpu_model, 0), p.gpus_per_node)
+        return out
+
 
 def _pool(raw: dict, where: str) -> Pool:
     if not isinstance(raw, dict):

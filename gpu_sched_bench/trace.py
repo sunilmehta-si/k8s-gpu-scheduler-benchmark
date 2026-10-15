@@ -30,6 +30,7 @@ class Job:
     priority: int = 0
     gang: bool = False       # all replicas must start together (distributed training)
     model: str = ""
+    gpu_model: str = ""      # required GPU product (a node's nvidia.com/gpu.product); empty = any
 
     @property
     def gpus(self) -> int:
@@ -61,7 +62,8 @@ def _job(raw: dict, line: int) -> Job:
         raise TraceError(f"{where} ({raw['id']}): duration_s must be a number > 0.")
     return Job(id=str(raw["id"]), arrival_s=float(raw["arrival_s"]), team=str(raw["team"]), kind=raw["kind"],
                replicas=raw["replicas"], gpus_per_replica=raw["gpus_per_replica"], duration_s=float(raw["duration_s"]),
-               priority=int(raw.get("priority", 0)), gang=bool(raw.get("gang", False)), model=str(raw.get("model", "")))
+               priority=int(raw.get("priority", 0)), gang=bool(raw.get("gang", False)), model=str(raw.get("model", "")),
+               gpu_model=str(raw.get("gpu_model", "")))
 
 
 def parse(lines: list[str]) -> list[Job]:
@@ -86,15 +88,28 @@ def load(path: str | Path) -> list[Job]:
 
 
 def dump(jobs: list[Job]) -> str:
-    return "".join(json.dumps(asdict(j), separators=(",", ":")) + "\n" for j in jobs)
+    """One JSON object per job; the optional gpu_model is written only when set, so older traces stay byte-identical."""
+    out = []
+    for j in jobs:
+        d = asdict(j)
+        if not d["gpu_model"]:
+            del d["gpu_model"]
+        out.append(json.dumps(d, separators=(",", ":")) + "\n")
+    return "".join(out)
 
 
-def check_fits(jobs: list[Job], max_gpus_per_node: int) -> None:
-    """Every replica must fit on one node of the fleet, or no scheduler could ever place it."""
+def check_fits(jobs: list[Job], max_gpus_per_node: int, nodes_by_model: dict[str, int] | None = None) -> None:
+    """Every replica must fit on one node of the fleet (of its required GPU model), or no scheduler could place it.
+    nodes_by_model maps a GPU product to the most GPUs any node of that product has."""
     too_big = [j.id for j in jobs if j.gpus_per_replica > max_gpus_per_node]
     if too_big:
         raise TraceError(f"{len(too_big)} job(s) ask for more GPUs per replica than any node has ({max_gpus_per_node}), "
                          f"e.g. {', '.join(too_big[:3])}.")
+    if nodes_by_model is not None:
+        unmet = [j.id for j in jobs if j.gpu_model and j.gpus_per_replica > nodes_by_model.get(j.gpu_model, 0)]
+        if unmet:
+            raise TraceError(f"{len(unmet)} job(s) need a GPU model the fleet doesn't have enough of on one node, "
+                             f"e.g. {', '.join(unmet[:3])}.")
 
 
 def stats(jobs: list[Job], fleet=None) -> str:

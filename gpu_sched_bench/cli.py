@@ -116,7 +116,7 @@ def _cmd_ablate(args: argparse.Namespace) -> int:
     from .trace import TraceError, check_fits, load as load_trace
     try:
         fleet, jobs = load_fleet(args.fleet), load_trace(args.trace)
-        check_fits(jobs, fleet.max_gpus_per_node)
+        check_fits(jobs, fleet.max_gpus_per_node, fleet.max_gpus_by_model)
     except (FleetError, TraceError, OSError) as exc:
         print(f"gsb: {exc}", file=sys.stderr)
         return 2
@@ -161,7 +161,7 @@ def _cmd_cluster(args: argparse.Namespace) -> int:
     from .trace import TraceError, check_fits, load as load_trace
     try:
         fleet, jobs = load_fleet(args.fleet), load_trace(args.trace)
-        check_fits(jobs, fleet.max_gpus_per_node)
+        check_fits(jobs, fleet.max_gpus_per_node, fleet.max_gpus_by_model)
         shares = equal_quotas([j.team for j in jobs]) if args.quotas == "equal" else {}
         doc = run_cluster(Kubectl(context=args.context), fleet, jobs, args.stack, shares, args.speedup,
                           timeout_s=args.timeout, trace_name=Path(args.trace).name,
@@ -227,7 +227,7 @@ def _cmd_simulate(args: argparse.Namespace) -> int:
     try:
         fleet = load_fleet(args.fleet)
         jobs = load_trace(args.trace)
-        check_fits(jobs, fleet.max_gpus_per_node)
+        check_fits(jobs, fleet.max_gpus_per_node, fleet.max_gpus_by_model)
     except (FleetError, TraceError, OSError) as exc:
         print(f"gsb: {exc}", file=sys.stderr)
         return 2

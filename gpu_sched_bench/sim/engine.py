@@ -31,6 +31,7 @@ class NodeState:
     gpus: int
     free: int
     price: float
+    gpu_model: str = ""
 
 
 @dataclass
@@ -86,7 +87,7 @@ class Result:
 class Simulator:
     def __init__(self, fleet: Fleet, jobs: list[Job], policy: Policy):
         self.fleet, self.policy = fleet, policy
-        self.nodes = [NodeState(n.name, n.pool, n.gpus, n.gpus, n.price_per_gpu_hour) for n in fleet.nodes]
+        self.nodes = [NodeState(n.name, n.pool, n.gpus, n.gpus, n.price_per_gpu_hour, n.gpu_model) for n in fleet.nodes]
         self.by_name = {n.name: n for n in self.nodes}
         self.records = {j.id: JobRecord(j, [None] * j.replicas, [None] * j.replicas, [None] * j.replicas,
                                         [None] * j.replicas, [None] * j.replicas, [j.duration_s] * j.replicas)
@@ -119,8 +120,8 @@ class Simulator:
         self.now = t
 
     # -- placement --------------------------------------------------------------------------------
-    def _choose(self, need: int, free: dict[str, int]) -> str | None:
-        fits = [n for n in self.nodes if free[n.name] >= need]
+    def _choose(self, need: int, free: dict[str, int], gpu_model: str = "") -> str | None:
+        fits = [n for n in self.nodes if free[n.name] >= need and (not gpu_model or n.gpu_model == gpu_model)]
         if not fits:
             return None
         if self.policy.placement == "binpack":     # tightest fit: the busiest node that still has room
@@ -179,7 +180,7 @@ class Simulator:
         for i, node in enumerate(rec.nodes):
             if node is not None:
                 continue
-            choice = self._choose(rec.job.gpus_per_replica, free)
+            choice = self._choose(rec.job.gpus_per_replica, free, rec.job.gpu_model)
             if choice is None:
                 return None
             free[choice] -= rec.job.gpus_per_replica
@@ -287,13 +288,13 @@ class Simulator:
                     if node is None:
                         need = rec.job.gpus_per_replica
                         current = {n.name: n.free for n in self.nodes}
-                        choice = self._choose(need, current) if self._admissible(rec.job.team, need) else None
+                        choice = self._choose(need, current, rec.job.gpu_model) if self._admissible(rec.job.team, need) else None
                         if choice is None and self.policy.reclaim and \
-                                self._reclaim_for(rec, need, lambda free: self._choose(need, free) is not None):
-                            choice = self._choose(need, {n.name: n.free for n in self.nodes})
-                        if choice is None and self._preempt_lower(rec, lambda free: self._choose(need, free) is not None):
+                                self._reclaim_for(rec, need, lambda free: self._choose(need, free, rec.job.gpu_model) is not None):
+                            choice = self._choose(need, {n.name: n.free for n in self.nodes}, rec.job.gpu_model)
+                        if choice is None and self._preempt_lower(rec, lambda free: self._choose(need, free, rec.job.gpu_model) is not None):
                             current = {n.name: n.free for n in self.nodes}
-                            choice = self._choose(need, current) if self._admissible(rec.job.team, need) else None
+                            choice = self._choose(need, current, rec.job.gpu_model) if self._admissible(rec.job.team, need) else None
                         if choice is None:
                             break
                         self._place_replica(rec, i, choice)
@@ -310,9 +311,9 @@ class Simulator:
             if rec.nodes[i] is not None:
                 continue
             need = rec.job.gpus_per_replica
-            node = self._choose(need, {n.name: n.free for n in self.nodes})
-            if node is None and self._preempt_lower(rec, lambda free: self._choose(need, free) is not None):
-                node = self._choose(need, {n.name: n.free for n in self.nodes})   # kube-scheduler preemption
+            node = self._choose(need, {n.name: n.free for n in self.nodes}, rec.job.gpu_model)
+            if node is None and self._preempt_lower(rec, lambda free: self._choose(need, free, rec.job.gpu_model) is not None):
+                node = self._choose(need, {n.name: n.free for n in self.nodes}, rec.job.gpu_model)   # kube-scheduler preemption
             if node is not None:
                 self._place_replica(rec, i, node)
 

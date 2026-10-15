@@ -27,7 +27,7 @@ def pod_template(job: Job, speedup: float, scheduler: str | None = None, labels:
     spec = {
         "restartPolicy": "Never",
         "priorityClassName": priority_class(job.priority),
-        "nodeSelector": {"type": "kwok"},
+        "nodeSelector": {"type": "kwok", **({"nvidia.com/gpu.product": job.gpu_model} if job.gpu_model else {})},
         "tolerations": [{"key": KWOK_TAINT["key"], "operator": "Exists", "effect": KWOK_TAINT["effect"]}],
         "automountServiceAccountToken": False,
         "containers": [{"name": "main", "image": PLACEHOLDER_IMAGE,

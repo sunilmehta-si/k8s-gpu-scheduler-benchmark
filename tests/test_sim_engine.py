@@ -191,3 +191,28 @@ class PriorityPreemptionTests(unittest.TestCase):
         self.assertEqual(r.records["urgent"].start, 1000)
         with self.assertRaises(ValueError):
             Policy("bad", priority_preemption="sometimes")
+
+
+class GpuModelTests(unittest.TestCase):
+    MIXED = parse({"name": "m", "pools": [{"name": "h100", "count": 1, "gpus_per_node": 8, "gpu_model": "H100"},
+                                           {"name": "l4", "count": 1, "gpus_per_node": 8, "gpu_model": "L4"}]})
+
+    def test_replicas_only_land_on_the_required_model(self):
+        jobs = [Job("a", 0, "t", "training", 1, 8, 100, 0, False, "", "H100"),
+                Job("b", 0, "t", "training", 1, 8, 100, 0, False, "", "H100")]
+        r = simulate(self.MIXED, jobs, Policy("p"))
+        self.assertEqual((r.records["a"].nodes[0], r.records["b"].nodes[0]), ("h100-000", "h100-000"))
+        self.assertEqual(r.records["b"].start, 100)             # waited for the H100 node; the L4 node stayed idle
+
+    def test_trace_validation_and_manifests(self):
+        from gpu_sched_bench import manifests
+        from gpu_sched_bench.trace import TraceError, check_fits, dump, parse as parse_trace
+        jobs = [Job("x", 0, "t", "training", 1, 8, 60, 0, False, "", "B200")]
+        with self.assertRaisesRegex(TraceError, "GPU model"):
+            check_fits(jobs, 8, self.MIXED.max_gpus_by_model)
+        self.assertEqual(parse_trace(dump(jobs).splitlines())[0].gpu_model, "B200")
+        plain = [Job("y", 0, "t", "notebook", 1, 1, 60)]
+        self.assertNotIn("gpu_model", dump(plain))              # older traces stay byte-identical
+        pod = manifests.render("default", self.MIXED, [Job("z", 0, "t", "training", 1, 8, 60, 0, False, "", "H100")],
+                               {}, part="jobs")[0]["spec"]["template"]
+        self.assertEqual(pod["spec"]["nodeSelector"]["nvidia.com/gpu.product"], "H100")
