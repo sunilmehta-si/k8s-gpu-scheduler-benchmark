@@ -46,7 +46,42 @@ def _row(label: str, path: tuple, higher: bool, fmt, stacks: dict) -> str:
     return f"| {label} <sub>{arrow}</sub> | " + " | ".join(cells) + " |"
 
 
+SWEEP_ROWS = [  # (label, metric key, formatter for one number)
+    ("Makespan (h)", "makespan_h", lambda v: f"{v:.1f}"),
+    ("Useful utilisation", "useful_utilisation", lambda v: f"{v:.1%}"),
+    ("Queue wait p95 (min)", "queue_wait_p95_min", lambda v: f"{v:.0f}"),
+    ("Stranded GPU-hours", "stranded_gpu_h", lambda v: f"{v:,.0f}"),
+    ("Preempted work (GPU-h)", "preempted_gpu_h", lambda v: f"{v:,.0f}"),
+    ("Cost per useful GPU-hour", "cost_per_useful_gpu_h", lambda v: f"${v:.2f}"),
+    ("Fairness between teams (Jain)", "fairness", lambda v: f"{v:.3f}"),
+]
+
+
+def sweep_to_markdown(sweep: dict) -> str:
+    from .sweep import METRICS
+    stacks = list(sweep["summary"])
+    n = len(sweep["seeds"])
+    lines = [f"## {sweep['fleet']['name']}: {n} seeded traces, {sweep['rate_per_hour']:g} jobs/hour for {sweep['hours']:g} h", "",
+             f"> Reference simulation. Each cell is the mean ± standard deviation over {n} traces, with the range in brackets.", "",
+             "| Metric | " + " | ".join(stacks) + " |", "|---|" + "---|" * len(stacks)]
+    for label, key, fmt in SWEEP_ROWS:
+        lower = METRICS[key][1]
+        means = {s: sweep["summary"][s][key]["mean"] for s in stacks}
+        target = (min if lower else max)(means.values())
+        cells = []
+        for s in stacks:
+            m = sweep["summary"][s][key]
+            text = f"{fmt(m['mean'])} ± {fmt(m['stdev'])} ({fmt(m['min'])}–{fmt(m['max'])})"
+            cells.append(f"**{text}**" if means[s] == target and len(set(means.values())) > 1 else text)
+        lines.append(f"| {label} <sub>{'lower' if lower else 'higher'} is better</sub> | " + " | ".join(cells) + " |")
+    wins = sweep["cheapest_wins"]
+    lines.append("| Cheapest per useful GPU-hour | " + " | ".join(f"{wins[s]}/{n} seeds" for s in stacks) + " |")
+    return "\n".join(lines) + "\n"
+
+
 def to_markdown(results: dict) -> str:
+    if results.get("mode") == "simulation-sweep":
+        return sweep_to_markdown(results)
     stacks = results["stacks"]
     names = list(stacks)
     fleet, trace = results["fleet"], results["trace"]

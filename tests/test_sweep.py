@@ -46,3 +46,13 @@ class SweepCliTests(unittest.TestCase):
         self.assertEqual(json.loads(buf.getvalue())["seeds"], [1, 2])
         with redirect_stderr(io.StringIO()):
             self.assertEqual(main(["sweep", "--fleet", fleet, "--stacks", "slurm"]), 2)
+
+
+class SweepReportTests(unittest.TestCase):
+    def test_markdown(self):
+        from gpu_sched_bench.report import to_markdown
+        md = to_markdown(run_sweep(FLEET, ["default", "kai"], seeds=[1, 2], rate=6, hours=2))
+        self.assertIn("2 seeded traces", md)
+        self.assertIn("| Metric | default | kai |", md)
+        self.assertIn(" ± ", md)
+        self.assertIn("/2 seeds", md)
