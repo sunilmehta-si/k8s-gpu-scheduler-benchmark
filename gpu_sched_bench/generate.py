@@ -47,6 +47,7 @@ class TraceSpec:
     shapes: dict[str, Shape] = field(default_factory=lambda: dict(DEFAULT_SHAPES))
     max_gpus_per_node: int = 8
     max_job_gpus: int = 0          # cap on replicas x GPUs per job (0 = no cap); keep it below the fleet size
+    pin_training: str = ""         # GPU model that training jobs require (e.g. the H100 pool); empty = any
     seed: int = 7
 
 
@@ -76,5 +77,6 @@ def generate(spec: TraceSpec) -> list[Job]:
         n += 1
         jobs.append(Job(id=f"{kind}-{n:05d}", arrival_s=round(t, 1), team=rng.choices(teams, weights=team_weights)[0],
                         kind=kind, replicas=replicas, gpus_per_replica=gpus, duration_s=round(max(60.0, minutes * 60), 1),
-                        priority=shape.priority, gang=shape.gang and replicas > 1, model=rng.choice(shape.models)))
+                        priority=shape.priority, gang=shape.gang and replicas > 1, model=rng.choice(shape.models),
+                        gpu_model=spec.pin_training if kind == "training" else ""))
     return jobs

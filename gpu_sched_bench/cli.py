@@ -27,6 +27,8 @@ def _parser() -> argparse.ArgumentParser:
     g.add_argument("--seed", type=int, default=7, help="Random seed; the same seed gives the same trace (default: 7).")
     g.add_argument("--max-job-share", type=float, default=0.5,
                    help="Largest job as a share of the fleet's GPUs (default: 0.5).")
+    g.add_argument("--pin-training", default="", metavar="GPU_MODEL",
+                   help="Make training jobs require this GPU model, e.g. NVIDIA-H100-80GB-HBM3 (default: any).")
     g.add_argument("--output", "-o", help="Write to this file instead of stdout.")
     st = tsub.add_parser("stats", help="Summarise a trace: jobs and GPU-hours by kind and team.")
     st.add_argument("trace", help="Trace JSONL file.")
@@ -249,7 +251,10 @@ def _cmd_trace(args: argparse.Namespace) -> int:
             from .generate import TraceSpec, generate
             jobs = generate(TraceSpec(hours=args.hours, jobs_per_hour=args.rate, seed=args.seed,
                                       max_gpus_per_node=fleet.max_gpus_per_node,
-                                      max_job_gpus=max(1, int(fleet.total_gpus * args.max_job_share))))
+                                      max_job_gpus=max(1, int(fleet.total_gpus * args.max_job_share)),
+                                      pin_training=args.pin_training))
+            if args.pin_training and args.pin_training not in fleet.max_gpus_by_model:
+                raise trace_mod.TraceError(f"the fleet has no {args.pin_training} nodes")
             text = trace_mod.dump(jobs)
             if args.output:
                 Path(args.output).write_text(text)
