@@ -72,6 +72,8 @@ def _parser() -> argparse.ArgumentParser:
     cr.add_argument("--timeout", type=float, default=1800.0, help="Give up waiting after this many wall seconds (default: 1800).")
     cr.add_argument("--quotas", choices=("equal", "none"), default="equal", help="Team quotas (default: equal).")
     cr.add_argument("--context", help="kubectl context (default: the current one).")
+    cr.add_argument("--strict", action="store_true",
+                    help="Exit 1 if pods did not run for their expected time (a misconfigured kwok), after writing results.")
     cr.add_argument("--output", "-o", help="Write results JSON here instead of stdout.")
     return p
 
@@ -156,6 +158,9 @@ def _cmd_cluster(args: argparse.Namespace) -> int:
         Path(args.output).write_text(dumps(doc))
     else:
         print(dumps(doc), end="")
+    if args.strict and not doc["runtime_check"]["ok"]:
+        print(f"gsb: runtime check failed: {doc['runtime_check']['reason']}", file=sys.stderr)
+        return 1
     return 0
 
 

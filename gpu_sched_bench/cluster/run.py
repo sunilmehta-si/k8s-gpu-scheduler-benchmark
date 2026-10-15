@@ -9,6 +9,7 @@ import yaml
 from .. import kwok, manifests, results
 from ..fleet import Fleet
 from ..trace import Job
+from .check import runtime_check
 from .collect import collect
 from .replay import plan, replay
 from .result import to_result
@@ -34,8 +35,12 @@ def run_cluster(kube, fleet: Fleet, jobs: list[Job], stack: str, shares: dict[st
         runs = collect(kube)
     done = sum(1 for r in runs if r.finished_at is not None)
     log(f"{done}/{expected} pods finished" + ("" if done == expected else " before the timeout"))
+    check = runtime_check(jobs, runs, speedup)
+    log(f"runtime check: {'ok' if check['ok'] else 'FAILED'} ({check.get('median_ratio', '-')}x expected over "
+        f"{check['pods_checked']} pods) {check['reason']}".rstrip())
     result = to_result(fleet, jobs, runs, stack, replay_start, speedup, collected_at=clock())
     doc = results.document(fleet, jobs, shares, trace_name, "cluster")
     doc["speedup"] = speedup
+    doc["runtime_check"] = check
     doc["stacks"][stack] = results.summarize(result, {"name": stack, "source": "cluster"})
     return doc
