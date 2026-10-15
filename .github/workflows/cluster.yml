@@ -1,0 +1,68 @@
+name: cluster
+
+# Replays the smoke trace on a real kind cluster with kwok GPU nodes, once per scheduling stack, and puts
+# the cluster results next to the model's prediction for the same trace.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "23 4 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cluster-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        stack: [default]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
+        with:
+          cluster_name: gsb
+          config: cluster/kind.yaml
+      - name: Install kwok
+        run: scripts/cluster-up.sh
+      - name: Install the scheduler
+        if: matrix.stack != 'default'
+        run: scripts/install-${{ matrix.stack }}.sh
+      - name: Replay the smoke trace on the cluster
+        env:
+          STACK: ${{ matrix.stack }}
+        run: |
+          gsb cluster run --stack "$STACK" --fleet fleets/lab-32.yaml --trace traces/lab-32-smoke.jsonl \
+            --speedup 300 --timeout 900 -o "cluster-$STACK.json"
+          gsb simulate --stacks "$STACK" --fleet fleets/lab-32.yaml --trace traces/lab-32-smoke.jsonl -o "model-$STACK.json"
+          {
+            echo "### $STACK on a kind + kwok cluster"; gsb report "cluster-$STACK.json"
+            echo "### $STACK in the reference model"; gsb report "model-$STACK.json"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Diagnostics
+        if: failure()
+        run: |
+          kubectl get nodes -o wide | head -20 || true
+          kubectl get pods -A -o wide || true
+          kubectl get events -A --sort-by=.lastTimestamp | tail -60 || true
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: cluster-${{ matrix.stack }}
+          path: |
+            cluster-*.json
+            model-*.json
+          if-no-files-found: ignore
