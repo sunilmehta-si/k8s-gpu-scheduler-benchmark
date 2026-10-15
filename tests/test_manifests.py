@@ -33,6 +33,8 @@ class CommonManifestTests(unittest.TestCase):
         self.assertEqual((job["spec"]["parallelism"], job["spec"]["completions"]), (2, 2))
         pod = job["spec"]["template"]
         self.assertEqual(pod["metadata"]["annotations"]["pod-complete.stage.kwok.x-k8s.io/delay"], "60s")  # 3600 s / 60
+        # jitter-delay is kwok's upper bound, so it must equal the delay for pods to run exactly that long
+        self.assertEqual(pod["metadata"]["annotations"]["pod-complete.stage.kwok.x-k8s.io/jitter-delay"], "60s")
         self.assertEqual(pod["spec"]["containers"][0]["resources"]["limits"], {"nvidia.com/gpu": "8"})
         self.assertEqual(pod["spec"]["nodeSelector"], {"type": "kwok"})
         self.assertNotIn("schedulerName", pod["spec"])                      # the default scheduler

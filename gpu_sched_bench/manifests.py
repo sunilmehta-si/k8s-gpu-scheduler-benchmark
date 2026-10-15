@@ -38,8 +38,11 @@ def pod_template(job: Job, speedup: float, scheduler: str | None = None, labels:
     return {
         "metadata": {
             "labels": {"gsb.io/job": job.id, "gsb.io/team": job.team, "gsb.io/kind": job.kind, **(labels or {})},
+            # kwok picks a random delay between delay and jitter-delay, and uses jitter-delay outright when it is
+            # not larger (lifecycle.go, Stage.Delay). Equal values give an exact delay; "0s" would mean no delay at
+            # all, and leaving it out would cap every delay at kwok's 5 s default.
             "annotations": {"pod-complete.stage.kwok.x-k8s.io/delay": f"{delay}s",
-                            "pod-complete.stage.kwok.x-k8s.io/jitter-delay": "0s"},
+                            "pod-complete.stage.kwok.x-k8s.io/jitter-delay": f"{delay}s"},
         },
         "spec": spec,
     }
