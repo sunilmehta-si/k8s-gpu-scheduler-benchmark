@@ -15,6 +15,8 @@ results:  ## regenerate every committed result, report and chart
 	$(PY) -m gpu_sched_bench report results/mixed-256.json results/lab-32.json -o results/README.md
 	$(PY) -m gpu_sched_bench sweep --fleet fleets/mixed-256.yaml --seeds 1-10 --rate 16 --hours 8 -o results/sweep-mixed-256.json
 	$(PY) -m gpu_sched_bench report results/sweep-mixed-256.json -o results/sweep-mixed-256.md
+	$(PY) -m gpu_sched_bench sweep --fleet fleets/mixed-256.yaml --seeds 1-10 --rate 16 --hours 8 --stacks default,default-binpack,kueue,kueue-binpack,volcano,volcano-binpack,kai -o results/sweep-mixed-256-tuned.json
+	$(PY) -m gpu_sched_bench report results/sweep-mixed-256-tuned.json -o results/sweep-mixed-256-tuned.md
 	$(PY) -m gpu_sched_bench chart results/mixed-256.json -o results/mixed-256.svg --title "256-GPU fleet, 131 jobs (reference simulation)"
 	$(PY) -m gpu_sched_bench chart results/lab-32.json -o results/lab-32.svg --title "32-GPU lab, 26 jobs (reference simulation)"
 

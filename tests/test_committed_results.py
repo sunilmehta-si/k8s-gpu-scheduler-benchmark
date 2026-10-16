@@ -34,6 +34,17 @@ class CommittedSweepAndChartTests(unittest.TestCase):
                          "results/sweep-mixed-256.json is stale: rerun gsb sweep")
         self.assertEqual((ROOT / "results/sweep-mixed-256.md").read_text(), to_markdown(fresh))
 
+    def test_tuned_sweep_regenerates_exactly(self):
+        from gpu_sched_bench.sweep import run_sweep
+        stacks = ["default", "default-binpack", "kueue", "kueue-binpack", "volcano", "volcano-binpack", "kai"]
+        fresh = run_sweep(load_fleet(ROOT / "fleets/mixed-256.yaml"), stacks, list(range(1, 11)), rate=16, hours=8)
+        self.assertEqual(fresh, json.loads((ROOT / "results/sweep-mixed-256-tuned.json").read_text()),
+                         "results/sweep-mixed-256-tuned.json is stale: rerun make results")
+        self.assertEqual((ROOT / "results/sweep-mixed-256-tuned.md").read_text(), to_markdown(fresh))
+        means = {s: fresh["summary"][s]["cost_per_useful_gpu_h"]["mean"] for s in stacks}
+        for stack in ("default", "kueue", "volcano"):           # bin-packing GPUs is cheaper for every stack
+            self.assertLess(means[f"{stack}-binpack"], means[stack], stack)
+
     def test_charts_match_results(self):
         from gpu_sched_bench.chart import svg
         titles = {"mixed-256": "256-GPU fleet, 131 jobs (reference simulation)", "lab-32": "32-GPU lab, 26 jobs (reference simulation)"}
