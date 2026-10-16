@@ -11,10 +11,11 @@ from .trace import Job
 
 
 def variants(shares: dict[str, float]) -> list[Policy]:
-    """Cumulative steps from the default scheduler towards a quota-aware gang scheduler."""
+    """Cumulative steps from the default scheduler towards a quota-aware gang scheduler. The default scheduler's
+    scoring ignores GPUs, so step 1 places at random among feasible nodes; bin-packing is the GPU-aware step."""
     steps = [
-        Policy("1 default"),
-        Policy("2 + gang", gang=True),
+        Policy("1 default", placement="random"),
+        Policy("2 + gang", gang=True, placement="random"),
         Policy("3 + gang, binpack", gang=True, placement="binpack"),
     ]
     if shares:
@@ -23,7 +24,8 @@ def variants(shares: dict[str, float]) -> list[Policy]:
             Policy("5 + borrowing", gang=True, placement="binpack", quotas=shares, borrowing=True),
             Policy("6 + reclaim", gang=True, placement="binpack", quotas=shares, borrowing=True, reclaim=True),
         ]
-    steps.append(Policy("binpack only", placement="binpack"))   # isolates bin-packing without gangs
+    steps += [Policy("binpack only", placement="binpack"),     # isolates bin-packing without gangs
+              Policy("GPU spread only", placement="spread")]   # GPU-aware LeastAllocated: the opposite of binpack
     return steps
 
 
