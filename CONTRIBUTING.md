@@ -16,6 +16,9 @@ make test
 - **Verify, don't recall.** When you add or change a stack, take API versions, field names and install commands from
   that project's own repository or docs at a pinned version, and say which in the commit message. (Kueue renamed
   `cohort` to `cohortName` in v1beta2; kwok's jitter delay is an upper bound. Both would have been wrong from memory.)
+- **Check behaviour against placements, not only totals.** A model can match a real run's time to finish for the
+  wrong reason. Compare where pods actually ran (`gsb timeline`, `gsb compare`) before trusting a preset. Volcano's
+  first preset assumed it bin-packed GPUs; the real placements showed it stacks pods by count.
 - **Label what is modelled.** Simulation results say `"mode": "simulation"`, cluster results `"mode": "cluster"`.
   Never present one as the other, and keep every modelling choice traceable to a documented behaviour in
   [`presets.py`](gpu_sched_bench/presets.py).
@@ -34,6 +37,11 @@ make test
    webhooks are ready, and add the stack to the matrix in [`.github/workflows/cluster.yml`](.github/workflows/cluster.yml).
 4. **Prove it:** the cluster workflow must pass with `--strict`, and `gsb compare` should show where the model and
    the real scheduler differ. Explain large differences in the pull request.
+
+A **tuned variant** is the same stack with one setting changed (for example `volcano-binpack`). Add its name to
+`TUNED` in `presets.py` (the preset is the base stack with the changed knob), its scheduler configuration to
+`SCHEDULER_CONFIG` in `manifests.py` (`gsb manifests --part scheduler` renders it), and an install script that
+installs the base stack and then applies that configuration.
 
 ## Contribute a trace
 
