@@ -1,6 +1,6 @@
 # Everyday commands. Python 3.10+ with the package installed (pip install -e .).
 PY ?= python3
-STACK ?= kai
+STACK ?= kai          # default, kueue, volcano, kai, or a tuned variant: default-binpack, kueue-binpack, volcano-binpack
 SPEEDUP ?= 300
 
 .PHONY: test results cluster clean
@@ -19,9 +19,9 @@ results:  ## regenerate every committed result, report and chart
 
 cluster:  ## run the smoke trace on a local kind + kwok cluster with STACK installed (fresh cluster per stack)
 	scripts/cluster-up.sh
-	if [ "$(STACK)" != "default" ]; then scripts/install-$(STACK).sh; fi
+	if [ "$(STACK)" != "default" ]; then GSB="$(PY) -m gpu_sched_bench" scripts/install-$(STACK).sh; fi
 	$(PY) -m gpu_sched_bench cluster run --stack $(STACK) --fleet fleets/lab-32.yaml --trace traces/lab-32-smoke.jsonl --speedup $(SPEEDUP) --strict -o cluster-$(STACK).json
-	$(PY) -m gpu_sched_bench simulate --stacks $(STACK) --fleet fleets/lab-32.yaml --trace traces/lab-32-smoke.jsonl -o model-$(STACK).json
+	$(PY) -m gpu_sched_bench simulate --stacks $(STACK) --fleet fleets/lab-32.yaml --trace traces/lab-32-smoke.jsonl --placements -o model-$(STACK).json
 	$(PY) -m gpu_sched_bench compare model-$(STACK).json cluster-$(STACK).json
 
 clean:
