@@ -100,6 +100,24 @@ class PlacementTests(unittest.TestCase):
             Policy("x", placement="round-robin")
 
 
+class OvercommitGateTests(unittest.TestCase):
+    # c runs, then gang a is admitted but can't fit; b (1 GPU) still passes the gate, d (4 GPUs) does not:
+    # 16 waiting + 4 > 1.2 x 16 - 2 in use. Without the gate d starts at once.
+    JOBS = [job("c", gpus=1, duration=100), job("a", arrival=1, replicas=2, gang=True),
+            job("b", arrival=2, gpus=1, duration=100), job("d", arrival=3, gpus=4, duration=10)]
+
+    def test_queued_demand_holds_back_later_jobs(self):
+        gated = simulate(FLEET, self.JOBS, Policy("v", gang=True, enqueue_overcommit=1.2))
+        open_ = simulate(FLEET, self.JOBS, Policy("v", gang=True))
+        self.assertEqual(open_.records["d"].start, 3)
+        self.assertEqual(gated.records["b"].start, 2)
+        self.assertGreater(gated.records["d"].start, gated.records["a"].start)   # d waited behind the admitted gang
+
+    def test_factor_below_one_is_rejected(self):
+        with self.assertRaises(ValueError):
+            Policy("v", enqueue_overcommit=0.5)
+
+
 class QueueTests(unittest.TestCase):
     JOBS = [job("blocker", duration=50), job("g", replicas=2, gang=True, arrival=1),
             job("small", gpus=4, arrival=2, duration=10)]

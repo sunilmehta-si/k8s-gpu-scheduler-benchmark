@@ -95,6 +95,7 @@ class Simulator:
                                         [None] * j.replicas, [None] * j.replicas, [j.duration_s] * j.replicas)
                         for j in jobs}
         self.pending: list[str] = []
+        self.enqueued: set[str] = set()     # jobs admitted past the overcommit gate (when the policy has one)
         self.events: list[tuple[float, int, int, str, int, int]] = []
         self._seq = 0
         for j in jobs:
@@ -173,6 +174,7 @@ class Simulator:
             rec = self.records[job_id]
             if rec.placed == rec.job.replicas:
                 self.pending.remove(job_id)
+                self.enqueued.discard(job_id)
                 if rec.job.gang:                       # the gang is complete: everyone starts together
                     for i in range(rec.job.replicas):
                         self._start(rec, i)
@@ -216,6 +218,7 @@ class Simulator:
                 rec.nodes[i] = rec.replica_start[i] = rec.held_since[i] = rec.placed_at[i] = None
         rec.epoch += 1
         rec.preemptions += 1
+        self.enqueued.discard(rec.job.id)          # an evicted job goes back through the gate
         if rec.job.id not in self.pending:
             self.pending.append(rec.job.id)
 
@@ -269,10 +272,28 @@ class Simulator:
                 return True
         return False
 
+    def _min_gpus(self, rec: JobRecord) -> int:
+        """The GPUs a job needs before it can run at all: the whole gang, or one replica."""
+        return (rec.job.replicas if rec.job.gang else 1) * rec.job.gpus_per_replica
+
+    def _enqueue(self, order: list[str]) -> list[str]:
+        """Volcano's overcommit gate: admit jobs in order while the GPUs that admitted jobs still wait for, plus the
+        new job's minimum, fit in factor x fleet minus the GPUs in use. Admitted jobs stay admitted until placed."""
+        cap = self.policy.enqueue_overcommit * self.fleet.total_gpus - sum(n.gpus - n.free for n in self.nodes)
+        waiting = sum(max(0, self._min_gpus(self.records[j]) - self.records[j].placed * self.records[j].job.gpus_per_replica)
+                      for j in order if j in self.enqueued)
+        for job_id in order:
+            if job_id not in self.enqueued and waiting + self._min_gpus(self.records[job_id]) <= cap:
+                self.enqueued.add(job_id)
+                waiting += self._min_gpus(self.records[job_id])
+        return [j for j in order if j in self.enqueued]
+
     def _schedule_jobs(self) -> None:
         """Job by job in priority then arrival order; with gang on, gang jobs are placed all-or-nothing.
         In a strict queue the first job that can't be fully placed stops the pass (head-of-line blocking)."""
         order = sorted(self.pending, key=lambda j: (-self.records[j].job.priority, self.records[j].job.arrival_s, j))
+        if self.policy.enqueue_overcommit:
+            order = self._enqueue(order)
         for job_id in order:
             rec = self.records[job_id]
             if rec.job.gang and self.policy.gang:

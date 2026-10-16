@@ -44,7 +44,8 @@
         "borrowing": false,
         "reclaim": false,
         "priority_preemption": "global",
-        "seed": 0
+        "seed": 0,
+        "enqueue_overcommit": 0.0
       },
       "makespan_h": 13.21,
       "jobs": 26,
@@ -169,7 +170,8 @@
         "borrowing": true,
         "reclaim": true,
         "priority_preemption": "team",
-        "seed": 0
+        "seed": 0,
+        "enqueue_overcommit": 0.0
       },
       "makespan_h": 15.2,
       "jobs": 26,
@@ -294,7 +296,8 @@
         "borrowing": true,
         "reclaim": false,
         "priority_preemption": "none",
-        "seed": 0
+        "seed": 0,
+        "enqueue_overcommit": 0.0
       },
       "makespan_h": 12.09,
       "jobs": 26,
@@ -419,7 +422,8 @@
         "borrowing": true,
         "reclaim": true,
         "priority_preemption": "team",
-        "seed": 0
+        "seed": 0,
+        "enqueue_overcommit": 0.0
       },
       "makespan_h": 13.16,
       "jobs": 26,

@@ -24,6 +24,9 @@ class Policy:
     reclaim: bool = False           # a team within its quota evicts borrowers to get its GPUs back
     priority_preemption: str = "none"  # a job evicts lower-priority jobs: in its own team, anywhere, or never
     seed: int = 0                   # for random placement; the same seed gives the same run
+    enqueue_overcommit: float = 0.0  # >0: a job is only considered once the GPUs queued jobs still wait for, plus
+                                     # its own minimum, fit in factor x fleet minus what is in use (Volcano's
+                                     # overcommit plugin, default factor 1.2); 0: every pending job is considered
 
     def __post_init__(self):
         if self.placement not in PLACEMENTS:
@@ -36,5 +39,7 @@ class Policy:
             raise ValueError("borrowing needs quotas")
         if self.priority_preemption not in PRIORITY_PREEMPTION:
             raise ValueError(f"priority_preemption must be one of {', '.join(PRIORITY_PREEMPTION)}")
+        if self.enqueue_overcommit and self.enqueue_overcommit < 1.0:
+            raise ValueError("enqueue_overcommit must be 0 (off) or at least 1.0")
         if self.reclaim and not self.borrowing:
             raise ValueError("reclaim needs borrowing (there is nothing to reclaim otherwise)")
