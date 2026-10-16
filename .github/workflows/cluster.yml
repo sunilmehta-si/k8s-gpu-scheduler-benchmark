@@ -55,6 +55,7 @@ jobs:
           {
             echo "### $STACK on a kind + kwok cluster"; gsb report "cluster-$STACK.json"
             echo "### $STACK in the reference model"; gsb report "model-$STACK.json"
+            gsb compare "model-$STACK.json" "cluster-$STACK.json"
             gsb timeline "cluster-$STACK.json" --stack "$STACK"; gsb timeline "model-$STACK.json" --stack "$STACK"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Evidence from the cluster
