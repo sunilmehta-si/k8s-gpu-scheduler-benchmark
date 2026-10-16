@@ -23,10 +23,13 @@ check on these models.
   allocate, backfill; plugins priority, gang, conformance, then overcommit, drf, predicates, proportion,
   nodeorder and binpack. Gang via minAvailable; proportion queue shares with borrowing of idle capacity;
   reclaim is not in the default action list, so it is off. The overcommit plugin admits a job only while
-  queued demand fits in 1.2x the cluster minus what is in use. Placement is random among feasible nodes:
-  binpack's default weights cover only cpu and memory (nvidia.com/gpu needs binpack.resources), a pod that
-  requests only GPUs scores 0 on every node, and nodeorder's least-requested also scores only cpu and memory.
-  The first cluster runs, made when this preset bin-packed GPUs, were 84% slower than it predicted.
+  queued demand fits in 1.2x the cluster minus what is in use. Placement is most-pods: binpack's default
+  weights cover only cpu and memory (nvidia.com/gpu needs binpack.resources), but Volcano charges a pod with no
+  requests 100m cpu, and binpack packs that, so each pod goes to the node already running the most pods,
+  whatever its GPU size. nodeorder's least-requested score is an integer that ties across these nodes. The
+  real scheduler's placements show it: every notebook and inference pod of the smoke trace went to the same
+  H100 node until it was full, which held the 16-GPU training gang back for seven hours. The first cluster
+  runs, made when this preset bin-packed GPUs, were 84% slower than it predicted.
 Tuned variants: the same stacks configured to bin-pack GPUs, the one setting the defaults leave out.
 - default-binpack, kueue-binpack: kube-scheduler with NodeResourcesFit's MostAllocated strategy scoring
   nvidia.com/gpu (a second scheduler profile; gsb manifests ships it). Otherwise as default and kueue.
@@ -58,7 +61,7 @@ def preset(name: str, quotas: dict[str, float] | None = None) -> Policy:
         return Policy("kueue", placement="random", queue="best-effort", gang=True, quotas=q, borrowing=bool(q),
                       reclaim=bool(q), priority_preemption="team")
     if name == "volcano":
-        return Policy("volcano", placement="random", queue="best-effort", gang=True, quotas=q, borrowing=bool(q),
+        return Policy("volcano", placement="most-pods", queue="best-effort", gang=True, quotas=q, borrowing=bool(q),
                       enqueue_overcommit=1.2)
     if name == "kai":
         return Policy("kai", placement="binpack", queue="best-effort", gang=True, quotas=q, borrowing=bool(q),

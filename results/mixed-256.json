@@ -294,7 +294,7 @@
     "volcano": {
       "policy": {
         "name": "volcano",
-        "placement": "random",
+        "placement": "most-pods",
         "queue": "best-effort",
         "gang": true,
         "quotas": {
@@ -319,15 +319,15 @@
       "queue_wait": {
         "jobs": 131,
         "p50_min": 0.0,
-        "p95_min": 181.3,
-        "max_min": 636.9
+        "p95_min": 350.4,
+        "max_min": 425.8
       },
       "queue_wait_by_kind": {
         "finetune": {
           "jobs": 43,
-          "p50_min": 4.1,
-          "p95_min": 134.1,
-          "max_min": 142.9
+          "p50_min": 0.0,
+          "p95_min": 405.7,
+          "max_min": 425.8
         },
         "inference": {
           "jobs": 26,
@@ -338,83 +338,83 @@
         "notebook": {
           "jobs": 44,
           "p50_min": 0.0,
-          "p95_min": 20.5,
-          "max_min": 26.0
+          "p95_min": 0.7,
+          "max_min": 25.2
         },
         "training": {
           "jobs": 18,
-          "p50_min": 35.9,
-          "p95_min": 636.9,
-          "max_min": 636.9
+          "p50_min": 135.3,
+          "p95_min": 423.7,
+          "max_min": 423.7
         }
       },
       "fragmentation": {
-        "idle_while_waiting_gpu_h": 1424.3,
-        "stranded_by_size": 0.7246,
-        "scattered_free": 0.1241,
-        "partial_nodes": 0.1309
+        "idle_while_waiting_gpu_h": 1184.0,
+        "stranded_by_size": 0.8142,
+        "scattered_free": 0.0462,
+        "partial_nodes": 0.0391
       },
       "fairness": {
-        "jain_service": 0.9994,
+        "jain_service": 0.9977,
         "jain_served_share": 1.0,
         "teams": {
           "platform": {
             "jobs": 34,
             "requested_gpu_h": 882.4,
-            "service": 0.8449,
+            "service": 0.8908,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
             "p50_min": 0.0,
-            "p95_min": 205.6,
-            "max_min": 636.9
+            "p95_min": 287.6,
+            "max_min": 404.1
           },
           "product": {
             "jobs": 51,
             "requested_gpu_h": 936.5,
-            "service": 0.8298,
+            "service": 0.8169,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
             "p50_min": 0.0,
-            "p95_min": 233.0,
-            "max_min": 532.8
+            "p95_min": 416.1,
+            "max_min": 425.8
           },
           "research": {
             "jobs": 46,
             "requested_gpu_h": 372.9,
-            "service": 0.8777,
+            "service": 0.9144,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
             "p50_min": 0.0,
-            "p95_min": 76.7,
-            "max_min": 231.4
+            "p95_min": 111.9,
+            "max_min": 343.6
           }
         }
       },
       "cost": {
         "total": 8546.08,
-        "idle": 3673.83,
+        "idle": 3561.11,
         "stranded": 0.0,
         "preempted_work": 0.0,
         "per_useful_gpu_h": 3.899,
         "by_team": {
-          "platform": 2053.2,
-          "product": 2022.48,
-          "research": 796.56
+          "platform": 2083.65,
+          "product": 2066.28,
+          "research": 835.04
         },
         "by_model": {
           "llama-70b": 1725.14,
           "vision-encoder": 1529.38,
           "mixtral-8x22b": 939.68,
-          "qwen-14b-lora": 127.39,
-          "chat-api": 123.26,
-          "rerank-api": 118.58,
-          "embedder": 100.0,
-          "llama-8b-lora": 86.67,
-          "embed-api": 85.14,
-          "notebook": 37.0
+          "chat-api": 209.67,
+          "rerank-api": 135.8,
+          "qwen-14b-lora": 130.66,
+          "embedder": 95.01,
+          "embed-api": 90.17,
+          "llama-8b-lora": 87.31,
+          "notebook": 42.15
         }
       }
     },

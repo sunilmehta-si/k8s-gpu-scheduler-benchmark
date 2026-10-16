@@ -112,22 +112,22 @@
     },
     "volcano": {
       "makespan_h": {
-        "mean": 21.681,
-        "stdev": 6.8951,
+        "mean": 21.254,
+        "stdev": 6.4196,
         "min": 11.86,
-        "max": 36.83
+        "max": 36.87
       },
       "useful_utilisation": {
-        "mean": 0.3422,
-        "stdev": 0.0672,
+        "mean": 0.3484,
+        "stdev": 0.0748,
         "min": 0.1793,
-        "max": 0.4263
+        "max": 0.4709
       },
       "queue_wait_p95_min": {
-        "mean": 127.35,
-        "stdev": 135.6313,
+        "mean": 171.95,
+        "stdev": 153.1771,
         "min": 0.0,
-        "max": 445.8
+        "max": 460.1
       },
       "stranded_gpu_h": {
         "mean": 0.0,
@@ -142,15 +142,15 @@
         "max": 0.0
       },
       "cost_per_useful_gpu_h": {
-        "mean": 5.1752,
-        "stdev": 1.4834,
-        "min": 3.929,
+        "mean": 5.1197,
+        "stdev": 1.5314,
+        "min": 3.557,
         "max": 9.341
       },
       "fairness": {
-        "mean": 0.9995,
-        "stdev": 0.0006,
-        "min": 0.9981,
+        "mean": 0.9992,
+        "stdev": 0.0008,
+        "min": 0.9974,
         "max": 1.0
       }
     },
@@ -202,8 +202,8 @@
   "cheapest_wins": {
     "default": 6,
     "kueue": 7,
-    "volcano": 5,
-    "kai": 9
+    "volcano": 6,
+    "kai": 8
   },
   "per_seed": [
     {
@@ -273,11 +273,11 @@
         "volcano": {
           "makespan_h": 22.6,
           "useful_utilisation": 0.3581,
-          "queue_wait_p95_min": 314.3,
+          "queue_wait_p95_min": 297.8,
           "stranded_gpu_h": 0.0,
           "preempted_gpu_h": 0.0,
           "cost_per_useful_gpu_h": 4.677,
-          "fairness": 0.9997
+          "fairness": 0.9991
         },
         "kai": {
           "makespan_h": 22.6,
@@ -355,12 +355,12 @@
           "fairness": 0.9997
         },
         "volcano": {
-          "makespan_h": 19.03,
-          "useful_utilisation": 0.3831,
-          "queue_wait_p95_min": 87.7,
+          "makespan_h": 19.0,
+          "useful_utilisation": 0.3836,
+          "queue_wait_p95_min": 20.4,
           "stranded_gpu_h": 0.0,
           "preempted_gpu_h": 0.0,
-          "cost_per_useful_gpu_h": 4.372,
+          "cost_per_useful_gpu_h": 4.367,
           "fairness": 0.9998
         },
         "kai": {
@@ -399,11 +399,11 @@
         "volcano": {
           "makespan_h": 16.12,
           "useful_utilisation": 0.4158,
-          "queue_wait_p95_min": 76.6,
+          "queue_wait_p95_min": 133.7,
           "stranded_gpu_h": 0.0,
           "preempted_gpu_h": 0.0,
           "cost_per_useful_gpu_h": 4.028,
-          "fairness": 0.9997
+          "fairness": 0.9995
         },
         "kai": {
           "makespan_h": 16.12,
@@ -439,12 +439,12 @@
           "fairness": 0.9975
         },
         "volcano": {
-          "makespan_h": 36.83,
-          "useful_utilisation": 0.3218,
-          "queue_wait_p95_min": 445.8,
+          "makespan_h": 36.87,
+          "useful_utilisation": 0.3215,
+          "queue_wait_p95_min": 351.8,
           "stranded_gpu_h": 0.0,
           "preempted_gpu_h": 0.0,
-          "cost_per_useful_gpu_h": 5.205,
+          "cost_per_useful_gpu_h": 5.211,
           "fairness": 0.9985
         },
         "kai": {
@@ -481,13 +481,13 @@
           "fairness": 0.9996
         },
         "volcano": {
-          "makespan_h": 20.08,
-          "useful_utilisation": 0.4263,
-          "queue_wait_p95_min": 85.2,
+          "makespan_h": 22.48,
+          "useful_utilisation": 0.3809,
+          "queue_wait_p95_min": 256.3,
           "stranded_gpu_h": 0.0,
           "preempted_gpu_h": 0.0,
-          "cost_per_useful_gpu_h": 3.929,
-          "fairness": 0.9995
+          "cost_per_useful_gpu_h": 4.398,
+          "fairness": 0.9989
         },
         "kai": {
           "makespan_h": 19.93,
@@ -525,7 +525,7 @@
         "volcano": {
           "makespan_h": 18.15,
           "useful_utilisation": 0.3682,
-          "queue_wait_p95_min": 35.1,
+          "queue_wait_p95_min": 65.8,
           "stranded_gpu_h": 0.0,
           "preempted_gpu_h": 0.0,
           "cost_per_useful_gpu_h": 4.549,
@@ -565,13 +565,13 @@
           "fairness": 0.9993
         },
         "volcano": {
-          "makespan_h": 25.04,
-          "useful_utilisation": 0.3165,
-          "queue_wait_p95_min": 100.4,
+          "makespan_h": 25.55,
+          "useful_utilisation": 0.3102,
+          "queue_wait_p95_min": 133.6,
           "stranded_gpu_h": 0.0,
           "preempted_gpu_h": 0.0,
-          "cost_per_useful_gpu_h": 5.293,
-          "fairness": 0.9981
+          "cost_per_useful_gpu_h": 5.4,
+          "fairness": 0.9974
         },
         "kai": {
           "makespan_h": 23.21,
@@ -607,13 +607,13 @@
           "fairness": 0.9993
         },
         "volcano": {
-          "makespan_h": 29.77,
-          "useful_utilisation": 0.3572,
-          "queue_wait_p95_min": 128.4,
+          "makespan_h": 22.58,
+          "useful_utilisation": 0.4709,
+          "queue_wait_p95_min": 460.1,
           "stranded_gpu_h": 0.0,
           "preempted_gpu_h": 0.0,
-          "cost_per_useful_gpu_h": 4.689,
-          "fairness": 0.9994
+          "cost_per_useful_gpu_h": 3.557,
+          "fairness": 0.9985
         },
         "kai": {
           "makespan_h": 23.41,

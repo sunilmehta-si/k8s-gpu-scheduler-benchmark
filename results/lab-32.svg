@@ -47,8 +47,8 @@
 <rect class="b" x="90" y="383" width="289" height="16" rx="3"/>
 <text class="v" x="385" y="395">342 min</text>
 <text class="n" x="82" y="419" text-anchor="end">volcano</text>
-<rect class="best" x="90" y="407" width="193" height="16" rx="3"/>
-<text class="v" x="289" y="419">228 min</text>
+<rect class="best" x="90" y="407" width="174" height="16" rx="3"/>
+<text class="v" x="270" y="419">206 min</text>
 <text class="n" x="82" y="443" text-anchor="end">kai</text>
 <rect class="b" x="90" y="431" width="330" height="16" rx="3"/>
 <text class="v" x="426" y="443">390 min</text>

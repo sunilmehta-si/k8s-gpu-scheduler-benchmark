@@ -285,7 +285,7 @@
     "volcano": {
       "policy": {
         "name": "volcano",
-        "placement": "random",
+        "placement": "most-pods",
         "queue": "best-effort",
         "gang": true,
         "quotas": {
@@ -309,16 +309,16 @@
       "preempted_gpu_h": 0.0,
       "queue_wait": {
         "jobs": 26,
-        "p50_min": 0.6,
-        "p95_min": 228.0,
-        "max_min": 297.9
+        "p50_min": 0.0,
+        "p95_min": 205.9,
+        "max_min": 229.4
       },
       "queue_wait_by_kind": {
         "finetune": {
           "jobs": 8,
-          "p50_min": 4.3,
-          "p95_min": 297.9,
-          "max_min": 297.9
+          "p50_min": 0.0,
+          "p95_min": 159.8,
+          "max_min": 159.8
         },
         "inference": {
           "jobs": 8,
@@ -329,58 +329,58 @@
         "notebook": {
           "jobs": 6,
           "p50_min": 0.0,
-          "p95_min": 28.9,
-          "max_min": 28.9
+          "p95_min": 30.6,
+          "max_min": 30.6
         },
         "training": {
           "jobs": 4,
           "p50_min": 59.1,
-          "p95_min": 228.0,
-          "max_min": 228.0
+          "p95_min": 229.4,
+          "max_min": 229.4
         }
       },
       "fragmentation": {
-        "idle_while_waiting_gpu_h": 57.1,
-        "stranded_by_size": 0.8382,
-        "scattered_free": 0.2613,
-        "partial_nodes": 0.3013
+        "idle_while_waiting_gpu_h": 53.4,
+        "stranded_by_size": 0.8762,
+        "scattered_free": 0.2454,
+        "partial_nodes": 0.2366
       },
       "fairness": {
-        "jain_service": 0.9759,
+        "jain_service": 0.9683,
         "jain_served_share": 1.0,
         "teams": {
           "platform": {
             "jobs": 6,
             "requested_gpu_h": 31.1,
-            "service": 0.9575,
+            "service": 0.9992,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
             "p50_min": 0.0,
-            "p95_min": 16.9,
-            "max_min": 16.9
+            "p95_min": 0.6,
+            "max_min": 0.6
           },
           "product": {
             "jobs": 11,
             "requested_gpu_h": 83.4,
-            "service": 0.7386,
+            "service": 0.7297,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
             "p50_min": 0.0,
-            "p95_min": 297.9,
-            "max_min": 297.9
+            "p95_min": 229.4,
+            "max_min": 229.4
           },
           "research": {
             "jobs": 9,
             "requested_gpu_h": 132.6,
-            "service": 0.6661,
+            "service": 0.666,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
             "p50_min": 34.3,
-            "p95_min": 204.5,
-            "max_min": 204.5
+            "p95_min": 205.9,
+            "max_min": 205.9
           }
         }
       },
