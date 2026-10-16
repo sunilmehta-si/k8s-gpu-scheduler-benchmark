@@ -21,7 +21,7 @@ Needs Docker, [kind](https://kind.sigs.k8s.io/), kubectl, and Helm for KAI.
 ```bash
 pip install -e .
 scripts/cluster-up.sh                       # kind cluster + kwok with delayed pod completion
-scripts/install-kai.sh                      # or install-kueue.sh / install-volcano.sh; nothing for "default"
+scripts/install-kai.sh                      # or install-<stack>.sh for any other stack; nothing for "default"
 gsb cluster run --stack kai --fleet fleets/lab-32.yaml --trace traces/lab-32-smoke.jsonl \
   --speedup 300 --strict -o cluster-kai.json
 gsb simulate --stacks kai --fleet fleets/lab-32.yaml --trace traces/lab-32-smoke.jsonl -o model-kai.json
@@ -36,9 +36,13 @@ webhooks start), submits each job at its arrival time divided by `--speedup`, wa
 
 ## How a run is checked
 
-Every run compares each pod's observed runtime with its expected runtime (trace duration / speedup) and records the
-median ratio as `runtime_check` in the results. With `--strict` the command exits 1 when the median is outside
-0.75–1.33x. That catches a misconfigured kwok, which otherwise produces plausible-looking but meaningless numbers.
+Every run makes two checks and records both as `runtime_check` in the results. With `--strict` the command exits 1
+when either fails. Both catch a misconfigured kwok, which otherwise produces plausible-looking but meaningless numbers.
+
+- **Runtime:** each pod's observed runtime against its expected runtime (trace duration / speedup). The median ratio
+  must be within 0.75–1.33x.
+- **Start lag:** the time from a pod being bound to a node (`PodScheduled`) to it starting. The median must be at
+  most 2 wall seconds; at 300x, each second is five trace minutes of GPUs held idle.
 
 It caught exactly that during development. kwok picks a random completion delay between
 `pod-complete.stage.kwok.x-k8s.io/delay` and `.../jitter-delay`, and uses the jitter value outright when it is not
@@ -47,6 +51,12 @@ and leaving it out caps every delay at kwok's 5-second default. The manifests se
 
 kwok's `stage-fast.yaml` release asset completes pods immediately; `scripts/cluster-up.sh` installs the
 `pod/general` stages instead, which read the delay annotations.
+
+The start-lag check exists because of the second bug, which the runtime check could not see. kwok's `pod-ready`
+stage waits 1 second plus up to 5 seconds of jitter before marking a pod running. Pods then ran exactly their
+expected time, so the runtime check passed, but every pod sat bound to its node for a median 30 trace minutes
+first, on every stack. That made all four real schedulers look slower than they are and hid how they differ. The
+recorded placements (`gsb timeline`) showed it. The manifests now set the pod-ready delay annotations to `0s`.
 
 ## In CI
 
