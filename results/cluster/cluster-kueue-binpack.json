@@ -1,0 +1,298 @@
+{
+  "schema_version": 1,
+  "tool_version": "0.2.0",
+  "mode": "cluster",
+  "fleet": {
+    "name": "lab-32",
+    "nodes": 6,
+    "gpus": 32,
+    "pools": [
+      {
+        "name": "h100",
+        "nodes": 2,
+        "gpus_per_node": 8,
+        "gpu_model": "NVIDIA-H100-80GB-HBM3",
+        "price_per_gpu_hour": 2.5
+      },
+      {
+        "name": "l40s",
+        "nodes": 4,
+        "gpus_per_node": 4,
+        "gpu_model": "NVIDIA-L40S",
+        "price_per_gpu_hour": 1.0
+      }
+    ]
+  },
+  "trace": {
+    "name": "lab-32-smoke.jsonl",
+    "jobs": 12,
+    "requested_gpu_h": 103.7
+  },
+  "quotas": {
+    "platform": 0.3333333333333333,
+    "product": 0.3333333333333333,
+    "research": 0.3333333333333333
+  },
+  "stacks": {
+    "kueue-binpack": {
+      "policy": {
+        "name": "kueue-binpack",
+        "source": "cluster"
+      },
+      "makespan_h": 7.34,
+      "jobs": 12,
+      "jobs_finished": 12,
+      "deadlocked": false,
+      "utilisation": 0.439,
+      "useful_utilisation": 0.439,
+      "stranded_gpu_h": 0.0,
+      "preempted_gpu_h": 0.0,
+      "queue_wait": {
+        "jobs": 12,
+        "p50_min": -0.0,
+        "p95_min": 120.1,
+        "max_min": 120.1
+      },
+      "queue_wait_by_kind": {
+        "finetune": {
+          "jobs": 3,
+          "p50_min": 5.8,
+          "p95_min": 37.4,
+          "max_min": 37.4
+        },
+        "inference": {
+          "jobs": 2,
+          "p50_min": -1.6,
+          "p95_min": 5.7,
+          "max_min": 5.7
+        },
+        "notebook": {
+          "jobs": 6,
+          "p50_min": -0.2,
+          "p95_min": 0.5,
+          "max_min": 0.5
+        },
+        "training": {
+          "jobs": 1,
+          "p50_min": 120.1,
+          "p95_min": 120.1,
+          "max_min": 120.1
+        }
+      },
+      "fragmentation": {
+        "idle_while_waiting_gpu_h": 31.9,
+        "stranded_by_size": 0.4118,
+        "scattered_free": 0.2432,
+        "partial_nodes": 0.3779
+      },
+      "fairness": {
+        "jain_service": 0.9848,
+        "jain_served_share": 1.0,
+        "teams": {
+          "platform": {
+            "jobs": 4,
+            "requested_gpu_h": 6.1,
+            "service": 1.1098,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": -0.2,
+            "p95_min": 5.8,
+            "max_min": 5.8
+          },
+          "product": {
+            "jobs": 5,
+            "requested_gpu_h": 95.8,
+            "service": 0.8422,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 5.7,
+            "p95_min": 120.1,
+            "max_min": 120.1
+          },
+          "research": {
+            "jobs": 3,
+            "requested_gpu_h": 1.7,
+            "service": 1.1121,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": -0.0,
+            "p95_min": 0.0,
+            "max_min": 0.0
+          }
+        }
+      },
+      "cost": {
+        "total": 409.58,
+        "idle": 218.41,
+        "stranded": 0.0,
+        "preempted_work": 0.0,
+        "per_useful_gpu_h": 3.97,
+        "by_team": {
+          "platform": 6.08,
+          "product": 183.33,
+          "research": 1.75
+        },
+        "by_model": {
+          "mixtral-8x22b": 100.0,
+          "embed-api": 36.67,
+          "llama-8b-lora": 23.33,
+          "embedder": 23.33,
+          "notebook": 4.17,
+          "qwen-14b-lora": 3.67
+        }
+      },
+      "placements": [
+        {
+          "job": "finetune-00002",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 408.7,
+          "start_s": 408.7,
+          "end_s": 4608.7
+        },
+        {
+          "job": "finetune-00008",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 4608.7,
+          "start_s": 4608.7,
+          "end_s": 8808.7
+        },
+        {
+          "job": "finetune-00009",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 2808.7,
+          "start_s": 2808.7,
+          "end_s": 9408.7
+        },
+        {
+          "job": "inference-00006",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 1608.7,
+          "start_s": 1608.7,
+          "end_s": 25008.7
+        },
+        {
+          "job": "inference-00006",
+          "replica": 1,
+          "node": "l40s-000",
+          "placed_s": 1608.7,
+          "start_s": 1608.7,
+          "end_s": 25008.7
+        },
+        {
+          "job": "inference-00010",
+          "replica": 0,
+          "node": "l40s-001",
+          "placed_s": 2808.7,
+          "start_s": 2808.7,
+          "end_s": 24108.7
+        },
+        {
+          "job": "inference-00010",
+          "replica": 1,
+          "node": "l40s-001",
+          "placed_s": 2808.7,
+          "start_s": 2808.7,
+          "end_s": 24108.7
+        },
+        {
+          "job": "inference-00010",
+          "replica": 2,
+          "node": "l40s-002",
+          "placed_s": 2808.7,
+          "start_s": 2808.7,
+          "end_s": 24108.7
+        },
+        {
+          "job": "inference-00010",
+          "replica": 3,
+          "node": "l40s-001",
+          "placed_s": 2808.7,
+          "start_s": 2808.7,
+          "end_s": 24108.7
+        },
+        {
+          "job": "notebook-00001",
+          "replica": 0,
+          "node": "l40s-001",
+          "placed_s": 108.7,
+          "start_s": 108.7,
+          "end_s": 2508.7
+        },
+        {
+          "job": "notebook-00003",
+          "replica": 0,
+          "node": "l40s-001",
+          "placed_s": 708.7,
+          "start_s": 708.7,
+          "end_s": 2508.7
+        },
+        {
+          "job": "notebook-00004",
+          "replica": 0,
+          "node": "l40s-001",
+          "placed_s": 1308.7,
+          "start_s": 1308.7,
+          "end_s": 4308.7
+        },
+        {
+          "job": "notebook-00005",
+          "replica": 0,
+          "node": "l40s-001",
+          "placed_s": 1308.7,
+          "start_s": 1308.7,
+          "end_s": 2208.7
+        },
+        {
+          "job": "notebook-00011",
+          "replica": 0,
+          "node": "l40s-002",
+          "placed_s": 3108.7,
+          "start_s": 3108.7,
+          "end_s": 9408.7
+        },
+        {
+          "job": "notebook-00012",
+          "replica": 0,
+          "node": "l40s-002",
+          "placed_s": 3408.7,
+          "start_s": 3408.7,
+          "end_s": 4008.7
+        },
+        {
+          "job": "training-00007",
+          "replica": 0,
+          "node": "h100-001",
+          "placed_s": 9408.7,
+          "start_s": 9408.7,
+          "end_s": 18408.7
+        },
+        {
+          "job": "training-00007",
+          "replica": 1,
+          "node": "h100-000",
+          "placed_s": 9408.7,
+          "start_s": 9408.7,
+          "end_s": 18408.7
+        }
+      ]
+    }
+  },
+  "speedup": 300.0,
+  "runtime_check": {
+    "pods_checked": 17,
+    "median_ratio": 1.0,
+    "min_ratio": 1.0,
+    "max_ratio": 1.0,
+    "median_start_lag_s": 0.0,
+    "max_start_lag_s": 0.0,
+    "ok": true,
+    "reason": ""
+  }
+}

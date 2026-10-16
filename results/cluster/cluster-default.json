@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "tool_version": "0.1.0",
+  "tool_version": "0.2.0",
   "mode": "cluster",
   "fleet": {
     "name": "lab-32",
@@ -39,111 +39,249 @@
         "name": "default",
         "source": "cluster"
       },
-      "makespan_h": 9.44,
+      "makespan_h": 7.75,
       "jobs": 12,
       "jobs_finished": 12,
       "deadlocked": false,
-      "utilisation": 0.4126,
-      "useful_utilisation": 0.3221,
-      "stranded_gpu_h": 27.3,
+      "utilisation": 0.4158,
+      "useful_utilisation": 0.3352,
+      "stranded_gpu_h": 20.0,
       "preempted_gpu_h": 0.0,
       "queue_wait": {
         "jobs": 12,
-        "p50_min": 29.5,
-        "p95_min": 437.9,
-        "max_min": 437.9
+        "p50_min": -3.4,
+        "p95_min": 338.2,
+        "max_min": 338.2
       },
       "queue_wait_by_kind": {
         "finetune": {
           "jobs": 3,
-          "p50_min": 29.5,
-          "p95_min": 437.9,
-          "max_min": 437.9
+          "p50_min": -0.3,
+          "p95_min": 338.2,
+          "max_min": 338.2
         },
         "inference": {
           "jobs": 2,
-          "p50_min": 24.0,
-          "p95_min": 31.3,
-          "max_min": 31.3
+          "p50_min": -3.5,
+          "p95_min": -0.8,
+          "max_min": -0.8
         },
         "notebook": {
           "jobs": 6,
-          "p50_min": 28.1,
-          "p95_min": 41.6,
-          "max_min": 41.6
+          "p50_min": -4.2,
+          "p95_min": -1.7,
+          "max_min": -1.7
         },
         "training": {
           "jobs": 1,
-          "p50_min": 260.7,
-          "p95_min": 260.7,
-          "max_min": 260.7
+          "p50_min": 191.0,
+          "p95_min": 191.0,
+          "max_min": 191.0
         }
       },
       "fragmentation": {
-        "idle_while_waiting_gpu_h": 112.3,
+        "idle_while_waiting_gpu_h": 96.2,
         "stranded_by_size": 1.0,
-        "scattered_free": 0.2497,
-        "partial_nodes": 0.2738
+        "scattered_free": 0.2405,
+        "partial_nodes": 0.2691
       },
       "fairness": {
-        "jain_service": 0.9832,
+        "jain_service": 0.9629,
         "jain_served_share": 1.0,
         "teams": {
           "platform": {
             "jobs": 4,
             "requested_gpu_h": 6.1,
-            "service": 0.5859,
+            "service": 1.1312,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
-            "p50_min": 26.1,
-            "p95_min": 28.1,
-            "max_min": 28.1
+            "p50_min": -3.7,
+            "p95_min": -1.7,
+            "max_min": -1.7
           },
           "product": {
             "jobs": 5,
             "requested_gpu_h": 95.8,
-            "service": 0.6147,
+            "service": 0.7258,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
-            "p50_min": 31.3,
-            "p95_min": 437.9,
-            "max_min": 437.9
+            "p50_min": -0.3,
+            "p95_min": 338.2,
+            "max_min": 338.2
           },
           "research": {
             "jobs": 3,
             "requested_gpu_h": 1.7,
-            "service": 0.4497,
+            "service": 1.1553,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
-            "p50_min": 40.6,
-            "p95_min": 41.6,
-            "max_min": 41.6
+            "p50_min": -4.2,
+            "p95_min": -3.2,
+            "max_min": -3.2
           }
         }
       },
       "cost": {
-        "total": 531.24,
-        "idle": 240.2,
-        "stranded": 103.38,
+        "total": 436.41,
+        "idle": 196.49,
+        "stranded": 50.0,
         "preempted_work": 0.0,
-        "per_useful_gpu_h": 5.458,
+        "per_useful_gpu_h": 5.247,
         "by_team": {
-          "platform": 17.08,
-          "product": 270.04,
-          "research": 3.92
+          "platform": 14.96,
+          "product": 220.58,
+          "research": 4.38
         },
         "by_model": {
-          "mixtral-8x22b": 113.33,
-          "embed-api": 88.38,
-          "embedder": 35.0,
-          "llama-8b-lora": 33.33,
-          "qwen-14b-lora": 11.67,
-          "notebook": 9.33
+          "mixtral-8x22b": 100.0,
+          "embed-api": 73.92,
+          "llama-8b-lora": 23.33,
+          "embedder": 23.33,
+          "notebook": 10.17,
+          "qwen-14b-lora": 9.17
         }
-      }
+      },
+      "placements": [
+        {
+          "job": "finetune-00002",
+          "replica": 0,
+          "node": "h100-001",
+          "placed_s": 457.1,
+          "start_s": 457.1,
+          "end_s": 4657.1
+        },
+        {
+          "job": "finetune-00008",
+          "replica": 0,
+          "node": "h100-001",
+          "placed_s": 22657.1,
+          "start_s": 22657.1,
+          "end_s": 26857.1
+        },
+        {
+          "job": "finetune-00009",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 2257.1,
+          "start_s": 2257.1,
+          "end_s": 8857.1
+        },
+        {
+          "job": "inference-00006",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 1657.1,
+          "start_s": 1657.1,
+          "end_s": 25057.1
+        },
+        {
+          "job": "inference-00006",
+          "replica": 1,
+          "node": "h100-000",
+          "placed_s": 1657.1,
+          "start_s": 1657.1,
+          "end_s": 25057.1
+        },
+        {
+          "job": "inference-00010",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 2257.1,
+          "start_s": 2257.1,
+          "end_s": 23557.1
+        },
+        {
+          "job": "inference-00010",
+          "replica": 1,
+          "node": "l40s-000",
+          "placed_s": 2257.1,
+          "start_s": 2257.1,
+          "end_s": 23557.1
+        },
+        {
+          "job": "inference-00010",
+          "replica": 2,
+          "node": "l40s-000",
+          "placed_s": 2257.1,
+          "start_s": 2257.1,
+          "end_s": 23557.1
+        },
+        {
+          "job": "inference-00010",
+          "replica": 3,
+          "node": "h100-000",
+          "placed_s": 2257.1,
+          "start_s": 2257.1,
+          "end_s": 23557.1
+        },
+        {
+          "job": "notebook-00001",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": -142.9,
+          "start_s": -142.9,
+          "end_s": 2257.1
+        },
+        {
+          "job": "notebook-00003",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 457.1,
+          "start_s": 457.1,
+          "end_s": 2257.1
+        },
+        {
+          "job": "notebook-00004",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 1057.1,
+          "start_s": 1057.1,
+          "end_s": 4057.1
+        },
+        {
+          "job": "notebook-00005",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 1357.1,
+          "start_s": 1357.1,
+          "end_s": 2257.1
+        },
+        {
+          "job": "notebook-00011",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 2857.1,
+          "start_s": 2857.1,
+          "end_s": 9157.1
+        },
+        {
+          "job": "notebook-00012",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 3457.1,
+          "start_s": 3457.1,
+          "end_s": 4057.1
+        },
+        {
+          "job": "training-00007",
+          "replica": 0,
+          "node": "h100-001",
+          "placed_s": 4657.1,
+          "start_s": 13657.1,
+          "end_s": 13657.1
+        },
+        {
+          "job": "training-00007",
+          "replica": 1,
+          "node": "h100-001",
+          "placed_s": 13657.1,
+          "start_s": 13657.1,
+          "end_s": 22657.1
+        }
+      ]
     }
   },
   "speedup": 300.0,
@@ -152,6 +290,8 @@
     "median_ratio": 1.0,
     "min_ratio": 1.0,
     "max_ratio": 1.0,
+    "median_start_lag_s": 0.0,
+    "max_start_lag_s": 0.0,
     "ok": true,
     "reason": ""
   }

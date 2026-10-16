@@ -1,0 +1,295 @@
+{
+  "schema_version": 1,
+  "tool_version": "0.2.0",
+  "mode": "simulation",
+  "fleet": {
+    "name": "lab-32",
+    "nodes": 6,
+    "gpus": 32,
+    "pools": [
+      {
+        "name": "h100",
+        "nodes": 2,
+        "gpus_per_node": 8,
+        "gpu_model": "NVIDIA-H100-80GB-HBM3",
+        "price_per_gpu_hour": 2.5
+      },
+      {
+        "name": "l40s",
+        "nodes": 4,
+        "gpus_per_node": 4,
+        "gpu_model": "NVIDIA-L40S",
+        "price_per_gpu_hour": 1.0
+      }
+    ]
+  },
+  "trace": {
+    "name": "lab-32-smoke.jsonl",
+    "jobs": 12,
+    "requested_gpu_h": 103.7
+  },
+  "quotas": {
+    "platform": 0.3333333333333333,
+    "product": 0.3333333333333333,
+    "research": 0.3333333333333333
+  },
+  "stacks": {
+    "default-binpack": {
+      "policy": {
+        "name": "default-binpack",
+        "placement": "binpack",
+        "queue": "best-effort",
+        "gang": false,
+        "quotas": {},
+        "borrowing": false,
+        "reclaim": false,
+        "priority_preemption": "global",
+        "seed": 0,
+        "enqueue_overcommit": 0.0
+      },
+      "makespan_h": 6.93,
+      "jobs": 12,
+      "jobs_finished": 12,
+      "deadlocked": false,
+      "utilisation": 0.4932,
+      "useful_utilisation": 0.4674,
+      "stranded_gpu_h": 5.7,
+      "preempted_gpu_h": 0.0,
+      "queue_wait": {
+        "jobs": 12,
+        "p50_min": 0.0,
+        "p95_min": 192.7,
+        "max_min": 192.7
+      },
+      "queue_wait_by_kind": {
+        "finetune": {
+          "jobs": 3,
+          "p50_min": 0.0,
+          "p95_min": 192.7,
+          "max_min": 192.7
+        },
+        "inference": {
+          "jobs": 2,
+          "p50_min": 0.0,
+          "p95_min": 0.0,
+          "max_min": 0.0
+        },
+        "notebook": {
+          "jobs": 6,
+          "p50_min": 0.0,
+          "p95_min": 0.0,
+          "max_min": 0.0
+        },
+        "training": {
+          "jobs": 1,
+          "p50_min": 43.0,
+          "p95_min": 43.0,
+          "max_min": 43.0
+        }
+      },
+      "fragmentation": {
+        "idle_while_waiting_gpu_h": 26.5,
+        "stranded_by_size": 1.0,
+        "scattered_free": 0.1383,
+        "partial_nodes": 0.2049
+      },
+      "fairness": {
+        "jain_service": 0.9908,
+        "jain_served_share": 1.0,
+        "teams": {
+          "platform": {
+            "jobs": 4,
+            "requested_gpu_h": 6.1,
+            "service": 1.0,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 0.0,
+            "max_min": 0.0
+          },
+          "product": {
+            "jobs": 5,
+            "requested_gpu_h": 95.8,
+            "service": 0.8085,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 192.7,
+            "max_min": 192.7
+          },
+          "research": {
+            "jobs": 3,
+            "requested_gpu_h": 1.7,
+            "service": 1.0,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 0.0,
+            "max_min": 0.0
+          }
+        }
+      },
+      "cost": {
+        "total": 388.2,
+        "idle": 181.14,
+        "stranded": 14.33,
+        "preempted_work": 0.0,
+        "per_useful_gpu_h": 3.744,
+        "by_team": {
+          "platform": 6.09,
+          "product": 199.23,
+          "research": 1.74
+        },
+        "by_model": {
+          "mixtral-8x22b": 115.98,
+          "embed-api": 36.48,
+          "llama-8b-lora": 23.9,
+          "embedder": 22.87,
+          "notebook": 4.1,
+          "qwen-14b-lora": 3.73
+        }
+      },
+      "placements": [
+        {
+          "job": "finetune-00002",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 476.7,
+          "start_s": 476.7,
+          "end_s": 4779.6
+        },
+        {
+          "job": "finetune-00008",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 13927.8,
+          "start_s": 13927.8,
+          "end_s": 18044.9
+        },
+        {
+          "job": "finetune-00009",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 2463.7,
+          "start_s": 2463.7,
+          "end_s": 9172.8
+        },
+        {
+          "job": "inference-00006",
+          "replica": 0,
+          "node": "l40s-001",
+          "placed_s": 1703.3,
+          "start_s": 1703.3,
+          "end_s": 24955.6
+        },
+        {
+          "job": "inference-00006",
+          "replica": 1,
+          "node": "l40s-001",
+          "placed_s": 1703.3,
+          "start_s": 1703.3,
+          "end_s": 24955.6
+        },
+        {
+          "job": "inference-00010",
+          "replica": 0,
+          "node": "l40s-001",
+          "placed_s": 2464.5,
+          "start_s": 2464.5,
+          "end_s": 23668.0
+        },
+        {
+          "job": "inference-00010",
+          "replica": 1,
+          "node": "l40s-001",
+          "placed_s": 2464.5,
+          "start_s": 2464.5,
+          "end_s": 23668.0
+        },
+        {
+          "job": "inference-00010",
+          "replica": 2,
+          "node": "l40s-002",
+          "placed_s": 2464.5,
+          "start_s": 2464.5,
+          "end_s": 23668.0
+        },
+        {
+          "job": "inference-00010",
+          "replica": 3,
+          "node": "l40s-002",
+          "placed_s": 2464.5,
+          "start_s": 2464.5,
+          "end_s": 23668.0
+        },
+        {
+          "job": "notebook-00001",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 107.9,
+          "start_s": 107.9,
+          "end_s": 2433.2
+        },
+        {
+          "job": "notebook-00003",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 680.0,
+          "start_s": 680.0,
+          "end_s": 2338.4
+        },
+        {
+          "job": "notebook-00004",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 1310.3,
+          "start_s": 1310.3,
+          "end_s": 4278.9
+        },
+        {
+          "job": "notebook-00005",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 1550.5,
+          "start_s": 1550.5,
+          "end_s": 2511.8
+        },
+        {
+          "job": "notebook-00011",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 3120.1,
+          "start_s": 3120.1,
+          "end_s": 9524.9
+        },
+        {
+          "job": "notebook-00012",
+          "replica": 0,
+          "node": "l40s-002",
+          "placed_s": 3560.1,
+          "start_s": 3560.1,
+          "end_s": 4012.1
+        },
+        {
+          "job": "training-00007",
+          "replica": 0,
+          "node": "h100-001",
+          "placed_s": 2200.1,
+          "start_s": 4779.6,
+          "end_s": 13927.8
+        },
+        {
+          "job": "training-00007",
+          "replica": 1,
+          "node": "h100-000",
+          "placed_s": 4779.6,
+          "start_s": 4779.6,
+          "end_s": 13927.8
+        }
+      ]
+    }
+  }
+}

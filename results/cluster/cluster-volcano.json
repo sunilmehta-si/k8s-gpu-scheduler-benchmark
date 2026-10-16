@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "tool_version": "0.1.0",
+  "tool_version": "0.2.0",
   "mode": "cluster",
   "fleet": {
     "name": "lab-32",
@@ -39,111 +39,249 @@
         "name": "volcano",
         "source": "cluster"
       },
-      "makespan_h": 12.76,
+      "makespan_h": 9.87,
       "jobs": 12,
       "jobs_finished": 12,
       "deadlocked": false,
-      "utilisation": 0.315,
-      "useful_utilisation": 0.2954,
-      "stranded_gpu_h": 8.0,
+      "utilisation": 0.3266,
+      "useful_utilisation": 0.3266,
+      "stranded_gpu_h": 0.0,
       "preempted_gpu_h": 0.0,
       "queue_wait": {
         "jobs": 12,
-        "p50_min": 40.1,
-        "p95_min": 570.3,
-        "max_min": 570.3
+        "p50_min": 5.7,
+        "p95_min": 391.1,
+        "max_min": 391.1
       },
       "queue_wait_by_kind": {
         "finetune": {
           "jobs": 3,
-          "p50_min": 467.5,
-          "p95_min": 474.0,
-          "max_min": 474.0
+          "p50_min": 4.8,
+          "p95_min": 48.3,
+          "max_min": 48.3
         },
         "inference": {
           "jobs": 2,
-          "p50_min": 43.6,
-          "p95_min": 50.9,
-          "max_min": 50.9
+          "p50_min": 1.6,
+          "p95_min": 4.3,
+          "max_min": 4.3
         },
         "notebook": {
           "jobs": 6,
-          "p50_min": 32.6,
-          "p95_min": 46.1,
-          "max_min": 46.1
+          "p50_min": 5.9,
+          "p95_min": 8.4,
+          "max_min": 8.4
         },
         "training": {
           "jobs": 1,
-          "p50_min": 570.3,
-          "p95_min": 570.3,
-          "max_min": 570.3
+          "p50_min": 391.1,
+          "p95_min": 391.1,
+          "max_min": 391.1
         }
       },
       "fragmentation": {
-        "idle_while_waiting_gpu_h": 225.6,
-        "stranded_by_size": 0.8963,
-        "scattered_free": 0.2391,
-        "partial_nodes": 0.1931
+        "idle_while_waiting_gpu_h": 161.0,
+        "stranded_by_size": 0.6828,
+        "scattered_free": 0.1975,
+        "partial_nodes": 0.2441
       },
       "fairness": {
-        "jain_service": 0.9915,
+        "jain_service": 0.9959,
         "jain_served_share": 1.0,
         "teams": {
           "platform": {
             "jobs": 4,
             "requested_gpu_h": 6.1,
-            "service": 0.5477,
+            "service": 0.805,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
-            "p50_min": 32.6,
-            "p95_min": 40.0,
-            "max_min": 40.0
+            "p50_min": 5.7,
+            "p95_min": 8.4,
+            "max_min": 8.4
           },
           "product": {
             "jobs": 5,
             "requested_gpu_h": 95.8,
-            "service": 0.4487,
+            "service": 0.7579,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
-            "p50_min": 467.5,
-            "p95_min": 570.3,
-            "max_min": 570.3
+            "p50_min": 4.8,
+            "p95_min": 391.1,
+            "max_min": 391.1
           },
           "research": {
             "jobs": 3,
             "requested_gpu_h": 1.7,
-            "service": 0.4574,
+            "service": 0.8854,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
-            "p50_min": 40.1,
-            "p95_min": 46.1,
-            "max_min": 46.1
+            "p50_min": 5.9,
+            "p95_min": 5.9,
+            "max_min": 5.9
           }
         }
       },
       "cost": {
-        "total": 713.08,
-        "idle": 391.41,
-        "stranded": 63.75,
+        "total": 551.19,
+        "idle": 307.65,
+        "stranded": 0.0,
         "preempted_work": 0.0,
-        "per_useful_gpu_h": 5.909,
+        "per_useful_gpu_h": 5.343,
         "by_team": {
-          "platform": 21.04,
-          "product": 292.08,
-          "research": 8.54
+          "platform": 9.71,
+          "product": 229.46,
+          "research": 4.38
         },
         "by_model": {
-          "mixtral-8x22b": 120.0,
-          "embed-api": 98.75,
-          "embedder": 38.33,
-          "llama-8b-lora": 35.0,
-          "notebook": 17.92,
-          "qwen-14b-lora": 11.67
+          "mixtral-8x22b": 100.0,
+          "embed-api": 82.79,
+          "llama-8b-lora": 23.33,
+          "embedder": 23.33,
+          "notebook": 10.42,
+          "qwen-14b-lora": 3.67
         }
-      }
+      },
+      "placements": [
+        {
+          "job": "finetune-00002",
+          "replica": 0,
+          "node": "h100-001",
+          "placed_s": 763.2,
+          "start_s": 763.2,
+          "end_s": 4963.2
+        },
+        {
+          "job": "finetune-00008",
+          "replica": 0,
+          "node": "h100-001",
+          "placed_s": 5263.2,
+          "start_s": 5263.2,
+          "end_s": 9463.2
+        },
+        {
+          "job": "finetune-00009",
+          "replica": 0,
+          "node": "l40s-002",
+          "placed_s": 2563.2,
+          "start_s": 2563.2,
+          "end_s": 9163.2
+        },
+        {
+          "job": "inference-00006",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 1963.2,
+          "start_s": 1963.2,
+          "end_s": 25363.2
+        },
+        {
+          "job": "inference-00006",
+          "replica": 1,
+          "node": "h100-000",
+          "placed_s": 1963.2,
+          "start_s": 1963.2,
+          "end_s": 25363.2
+        },
+        {
+          "job": "inference-00010",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 2563.2,
+          "start_s": 2563.2,
+          "end_s": 23863.2
+        },
+        {
+          "job": "inference-00010",
+          "replica": 1,
+          "node": "h100-000",
+          "placed_s": 2563.2,
+          "start_s": 2563.2,
+          "end_s": 23863.2
+        },
+        {
+          "job": "inference-00010",
+          "replica": 2,
+          "node": "h100-000",
+          "placed_s": 2563.2,
+          "start_s": 2563.2,
+          "end_s": 23863.2
+        },
+        {
+          "job": "inference-00010",
+          "replica": 3,
+          "node": "l40s-000",
+          "placed_s": 2563.2,
+          "start_s": 2563.2,
+          "end_s": 23863.2
+        },
+        {
+          "job": "notebook-00001",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 463.2,
+          "start_s": 463.2,
+          "end_s": 2863.2
+        },
+        {
+          "job": "notebook-00003",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 1063.2,
+          "start_s": 1063.2,
+          "end_s": 2863.2
+        },
+        {
+          "job": "notebook-00004",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 1663.2,
+          "start_s": 1663.2,
+          "end_s": 4663.2
+        },
+        {
+          "job": "notebook-00005",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 1663.2,
+          "start_s": 1663.2,
+          "end_s": 2563.2
+        },
+        {
+          "job": "notebook-00011",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 3463.2,
+          "start_s": 3463.2,
+          "end_s": 9763.2
+        },
+        {
+          "job": "notebook-00012",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 4063.2,
+          "start_s": 4063.2,
+          "end_s": 4663.2
+        },
+        {
+          "job": "training-00007",
+          "replica": 0,
+          "node": "h100-001",
+          "placed_s": 25663.2,
+          "start_s": 25663.2,
+          "end_s": 34663.2
+        },
+        {
+          "job": "training-00007",
+          "replica": 1,
+          "node": "h100-000",
+          "placed_s": 25663.2,
+          "start_s": 25663.2,
+          "end_s": 34663.2
+        }
+      ]
     }
   },
   "speedup": 300.0,
@@ -152,6 +290,8 @@
     "median_ratio": 1.0,
     "min_ratio": 1.0,
     "max_ratio": 1.0,
+    "median_start_lag_s": 0.0,
+    "max_start_lag_s": 0.0,
     "ok": true,
     "reason": ""
   }

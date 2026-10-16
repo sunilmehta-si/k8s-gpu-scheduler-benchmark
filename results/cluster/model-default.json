@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "tool_version": "0.1.0",
+  "tool_version": "0.2.0",
   "mode": "simulation",
   "fleet": {
     "name": "lab-32",
@@ -37,34 +37,36 @@
     "default": {
       "policy": {
         "name": "default",
-        "placement": "spread",
+        "placement": "random",
         "queue": "best-effort",
         "gang": false,
         "quotas": {},
         "borrowing": false,
         "reclaim": false,
-        "priority_preemption": "global"
+        "priority_preemption": "global",
+        "seed": 0,
+        "enqueue_overcommit": 0.0
       },
-      "makespan_h": 10.62,
+      "makespan_h": 6.93,
       "jobs": 12,
       "jobs_finished": 12,
       "deadlocked": false,
-      "utilisation": 0.4371,
-      "useful_utilisation": 0.3052,
-      "stranded_gpu_h": 44.8,
+      "utilisation": 0.4918,
+      "useful_utilisation": 0.4674,
+      "stranded_gpu_h": 5.4,
       "preempted_gpu_h": 0.0,
       "queue_wait": {
         "jobs": 12,
         "p50_min": 0.0,
-        "p95_min": 528.9,
-        "max_min": 528.9
+        "p95_min": 192.7,
+        "max_min": 192.7
       },
       "queue_wait_by_kind": {
         "finetune": {
           "jobs": 3,
           "p50_min": 0.0,
-          "p95_min": 528.9,
-          "max_min": 528.9
+          "p95_min": 192.7,
+          "max_min": 192.7
         },
         "inference": {
           "jobs": 2,
@@ -80,19 +82,19 @@
         },
         "training": {
           "jobs": 1,
-          "p50_min": 379.3,
-          "p95_min": 379.3,
-          "max_min": 379.3
+          "p50_min": 43.0,
+          "p95_min": 43.0,
+          "max_min": 43.0
         }
       },
       "fragmentation": {
-        "idle_while_waiting_gpu_h": 149.8,
+        "idle_while_waiting_gpu_h": 26.8,
         "stranded_by_size": 1.0,
-        "scattered_free": 0.5618,
-        "partial_nodes": 0.4871
+        "scattered_free": 0.2393,
+        "partial_nodes": 0.2758
       },
       "fairness": {
-        "jain_service": 0.9723,
+        "jain_service": 0.9908,
         "jain_served_share": 1.0,
         "teams": {
           "platform": {
@@ -109,13 +111,13 @@
           "product": {
             "jobs": 5,
             "requested_gpu_h": 95.8,
-            "service": 0.6803,
+            "service": 0.8085,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
             "p50_min": 0.0,
-            "p95_min": 528.9,
-            "max_min": 528.9
+            "p95_min": 192.7,
+            "max_min": 192.7
           },
           "research": {
             "jobs": 3,
@@ -131,25 +133,163 @@
         }
       },
       "cost": {
-        "total": 594.55,
-        "idle": 259.65,
-        "stranded": 112.09,
+        "total": 388.2,
+        "idle": 181.21,
+        "stranded": 13.56,
         "preempted_work": 0.0,
-        "per_useful_gpu_h": 5.735,
+        "per_useful_gpu_h": 3.744,
         "by_team": {
-          "platform": 15.04,
-          "product": 315.51,
-          "research": 4.34
+          "platform": 6.78,
+          "product": 198.46,
+          "research": 1.74
         },
         "by_model": {
-          "mixtral-8x22b": 213.74,
-          "embed-api": 55.0,
+          "mixtral-8x22b": 115.21,
+          "embed-api": 36.48,
           "llama-8b-lora": 23.9,
           "embedder": 22.87,
-          "notebook": 10.07,
-          "qwen-14b-lora": 9.32
+          "notebook": 4.79,
+          "qwen-14b-lora": 3.73
         }
-      }
+      },
+      "placements": [
+        {
+          "job": "finetune-00002",
+          "replica": 0,
+          "node": "h100-001",
+          "placed_s": 476.7,
+          "start_s": 476.7,
+          "end_s": 4779.6
+        },
+        {
+          "job": "finetune-00008",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 13927.8,
+          "start_s": 13927.8,
+          "end_s": 18044.9
+        },
+        {
+          "job": "finetune-00009",
+          "replica": 0,
+          "node": "l40s-003",
+          "placed_s": 2463.7,
+          "start_s": 2463.7,
+          "end_s": 9172.8
+        },
+        {
+          "job": "inference-00006",
+          "replica": 0,
+          "node": "l40s-002",
+          "placed_s": 1703.3,
+          "start_s": 1703.3,
+          "end_s": 24955.6
+        },
+        {
+          "job": "inference-00006",
+          "replica": 1,
+          "node": "l40s-002",
+          "placed_s": 1703.3,
+          "start_s": 1703.3,
+          "end_s": 24955.6
+        },
+        {
+          "job": "inference-00010",
+          "replica": 0,
+          "node": "l40s-002",
+          "placed_s": 2464.5,
+          "start_s": 2464.5,
+          "end_s": 23668.0
+        },
+        {
+          "job": "inference-00010",
+          "replica": 1,
+          "node": "l40s-001",
+          "placed_s": 2464.5,
+          "start_s": 2464.5,
+          "end_s": 23668.0
+        },
+        {
+          "job": "inference-00010",
+          "replica": 2,
+          "node": "l40s-001",
+          "placed_s": 2464.5,
+          "start_s": 2464.5,
+          "end_s": 23668.0
+        },
+        {
+          "job": "inference-00010",
+          "replica": 3,
+          "node": "l40s-002",
+          "placed_s": 2464.5,
+          "start_s": 2464.5,
+          "end_s": 23668.0
+        },
+        {
+          "job": "notebook-00001",
+          "replica": 0,
+          "node": "l40s-001",
+          "placed_s": 107.9,
+          "start_s": 107.9,
+          "end_s": 2433.2
+        },
+        {
+          "job": "notebook-00003",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 680.0,
+          "start_s": 680.0,
+          "end_s": 2338.4
+        },
+        {
+          "job": "notebook-00004",
+          "replica": 0,
+          "node": "l40s-001",
+          "placed_s": 1310.3,
+          "start_s": 1310.3,
+          "end_s": 4278.9
+        },
+        {
+          "job": "notebook-00005",
+          "replica": 0,
+          "node": "l40s-003",
+          "placed_s": 1550.5,
+          "start_s": 1550.5,
+          "end_s": 2511.8
+        },
+        {
+          "job": "notebook-00011",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 3120.1,
+          "start_s": 3120.1,
+          "end_s": 9524.9
+        },
+        {
+          "job": "notebook-00012",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 3560.1,
+          "start_s": 3560.1,
+          "end_s": 4012.1
+        },
+        {
+          "job": "training-00007",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 2338.4,
+          "start_s": 4779.6,
+          "end_s": 13927.8
+        },
+        {
+          "job": "training-00007",
+          "replica": 1,
+          "node": "h100-001",
+          "placed_s": 4779.6,
+          "start_s": 4779.6,
+          "end_s": 13927.8
+        }
+      ]
     }
   }
 }

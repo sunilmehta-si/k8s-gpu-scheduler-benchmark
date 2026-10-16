@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "tool_version": "0.1.0",
+  "tool_version": "0.2.0",
   "mode": "simulation",
   "fleet": {
     "name": "lab-32",
@@ -47,7 +47,9 @@
         },
         "borrowing": true,
         "reclaim": true,
-        "priority_preemption": "team"
+        "priority_preemption": "team",
+        "seed": 0,
+        "enqueue_overcommit": 0.0
       },
       "makespan_h": 6.93,
       "jobs": 12,
@@ -153,7 +155,145 @@
           "notebook": 4.1,
           "qwen-14b-lora": 3.73
         }
-      }
+      },
+      "placements": [
+        {
+          "job": "finetune-00002",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 476.7,
+          "start_s": 476.7,
+          "end_s": 4779.6
+        },
+        {
+          "job": "finetune-00008",
+          "replica": 0,
+          "node": "h100-001",
+          "placed_s": 2367.1,
+          "start_s": 2367.1,
+          "end_s": 6484.2
+        },
+        {
+          "job": "finetune-00009",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 2463.7,
+          "start_s": 2463.7,
+          "end_s": 9172.8
+        },
+        {
+          "job": "inference-00006",
+          "replica": 0,
+          "node": "l40s-001",
+          "placed_s": 1703.3,
+          "start_s": 1703.3,
+          "end_s": 24955.6
+        },
+        {
+          "job": "inference-00006",
+          "replica": 1,
+          "node": "l40s-001",
+          "placed_s": 1703.3,
+          "start_s": 1703.3,
+          "end_s": 24955.6
+        },
+        {
+          "job": "inference-00010",
+          "replica": 0,
+          "node": "l40s-001",
+          "placed_s": 2464.5,
+          "start_s": 2464.5,
+          "end_s": 23668.0
+        },
+        {
+          "job": "inference-00010",
+          "replica": 1,
+          "node": "l40s-001",
+          "placed_s": 2464.5,
+          "start_s": 2464.5,
+          "end_s": 23668.0
+        },
+        {
+          "job": "inference-00010",
+          "replica": 2,
+          "node": "l40s-002",
+          "placed_s": 2464.5,
+          "start_s": 2464.5,
+          "end_s": 23668.0
+        },
+        {
+          "job": "inference-00010",
+          "replica": 3,
+          "node": "l40s-002",
+          "placed_s": 2464.5,
+          "start_s": 2464.5,
+          "end_s": 23668.0
+        },
+        {
+          "job": "notebook-00001",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 107.9,
+          "start_s": 107.9,
+          "end_s": 2433.2
+        },
+        {
+          "job": "notebook-00003",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 680.0,
+          "start_s": 680.0,
+          "end_s": 2338.4
+        },
+        {
+          "job": "notebook-00004",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 1310.3,
+          "start_s": 1310.3,
+          "end_s": 4278.9
+        },
+        {
+          "job": "notebook-00005",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 1550.5,
+          "start_s": 1550.5,
+          "end_s": 2511.8
+        },
+        {
+          "job": "notebook-00011",
+          "replica": 0,
+          "node": "l40s-000",
+          "placed_s": 3120.1,
+          "start_s": 3120.1,
+          "end_s": 9524.9
+        },
+        {
+          "job": "notebook-00012",
+          "replica": 0,
+          "node": "l40s-002",
+          "placed_s": 3560.1,
+          "start_s": 3560.1,
+          "end_s": 4012.1
+        },
+        {
+          "job": "training-00007",
+          "replica": 0,
+          "node": "h100-000",
+          "placed_s": 6484.2,
+          "start_s": 6484.2,
+          "end_s": 15632.4
+        },
+        {
+          "job": "training-00007",
+          "replica": 1,
+          "node": "h100-001",
+          "placed_s": 6484.2,
+          "start_s": 6484.2,
+          "end_s": 15632.4
+        }
+      ]
     }
   }
 }
