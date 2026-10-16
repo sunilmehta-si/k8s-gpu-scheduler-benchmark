@@ -1,7 +1,7 @@
 import unittest
 
 from gpu_sched_bench.fleet import parse
-from gpu_sched_bench.presets import STACKS, equal_quotas, preset
+from gpu_sched_bench.presets import STACKS, TUNED, equal_quotas, preset
 from gpu_sched_bench.sim import simulate
 from gpu_sched_bench.trace import Job
 
@@ -16,6 +16,13 @@ class PresetTests(unittest.TestCase):
         self.assertEqual((k.gang, k.placement, k.borrowing, k.reclaim), (True, "random", True, True))
         self.assertEqual((v.gang, v.placement, v.borrowing, v.reclaim, v.enqueue_overcommit), (True, "random", True, False, 1.2))
         self.assertEqual((kai.gang, kai.placement, kai.reclaim), (True, "binpack", True))
+
+    def test_tuned_variants_only_change_placement(self):
+        q = equal_quotas(["a", "b"])
+        for name in TUNED:
+            tuned, base = preset(name, q), preset(name.removesuffix("-binpack"), q)
+            self.assertEqual((tuned.name, tuned.placement), (name, "binpack"))
+            self.assertEqual({**vars(tuned), "name": "", "placement": ""}, {**vars(base), "name": "", "placement": ""})
 
     def test_without_teams_quota_features_are_off(self):
         self.assertEqual((preset("kai").quotas, preset("kai").borrowing, preset("kai").reclaim), ({}, False, False))

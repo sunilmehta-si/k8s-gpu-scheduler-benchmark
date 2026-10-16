@@ -169,7 +169,7 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
     import json
 
     from .fleet import FleetError, load as load_fleet
-    from .presets import STACKS
+    from .presets import ALL_STACKS as STACKS
     from .sweep import run_sweep
     stacks = [s.strip() for s in args.stacks.split(",") if s.strip()]
     try:
@@ -260,7 +260,7 @@ def _cmd_report(args: argparse.Namespace) -> int:
 def _cmd_simulate(args: argparse.Namespace) -> int:
     from . import results
     from .fleet import FleetError, load as load_fleet
-    from .presets import STACKS
+    from .presets import ALL_STACKS as STACKS
     from .trace import TraceError, check_fits, load as load_trace
     stacks = [s.strip() for s in args.stacks.split(",") if s.strip()]
     unknown = [s for s in stacks if s not in STACKS]

@@ -27,19 +27,31 @@ check on these models.
   binpack's default weights cover only cpu and memory (nvidia.com/gpu needs binpack.resources), a pod that
   requests only GPUs scores 0 on every node, and nodeorder's least-requested also scores only cpu and memory.
   The first cluster runs, made when this preset bin-packed GPUs, were 84% slower than it predicted.
+Tuned variants: the same stacks configured to bin-pack GPUs, the one setting the defaults leave out.
+- default-binpack, kueue-binpack: kube-scheduler with NodeResourcesFit's MostAllocated strategy scoring
+  nvidia.com/gpu (a second scheduler profile; gsb manifests ships it). Otherwise as default and kueue.
+- volcano-binpack: Volcano with binpack.resources: nvidia.com/gpu and binpack.weight: 10, so GPU packing
+  outweighs nodeorder's cpu/memory scores. Otherwise as volcano.
+
 - kai: KAI Scheduler gang scheduling of pod groups, bin-packing by default, hierarchical queues with
   fair-share over quota, reclaim of borrowed resources, and priority preemption within a queue.
 """
 from __future__ import annotations
 
+from dataclasses import replace
+
 from .sim import Policy
 
-STACKS = ("default", "kueue", "volcano", "kai")
+STACKS = ("default", "kueue", "volcano", "kai")       # as installed, with their documented defaults
+TUNED = ("default-binpack", "kueue-binpack", "volcano-binpack")   # configured to bin-pack GPUs
+ALL_STACKS = STACKS + TUNED
 
 
 def preset(name: str, quotas: dict[str, float] | None = None) -> Policy:
     """`quotas` are team shares of the fleet; stacks that support quotas get them, the default stack ignores them."""
     q = dict(quotas or {})
+    if name in TUNED:
+        return replace(preset(name.removesuffix("-binpack"), q), name=name, placement="binpack")
     if name == "default":
         return Policy("default", placement="random", queue="best-effort", gang=False, priority_preemption="global")
     if name == "kueue":
@@ -51,7 +63,7 @@ def preset(name: str, quotas: dict[str, float] | None = None) -> Policy:
     if name == "kai":
         return Policy("kai", placement="binpack", queue="best-effort", gang=True, quotas=q, borrowing=bool(q),
                       reclaim=bool(q), priority_preemption="team")
-    raise ValueError(f"unknown stack '{name}'; choose from {', '.join(STACKS)}")
+    raise ValueError(f"unknown stack '{name}'; choose from {', '.join(ALL_STACKS)}")
 
 
 def equal_quotas(teams: list[str]) -> dict[str, float]:
