@@ -10,58 +10,66 @@ simulated GPU nodes. **No GPUs are needed for either.**
 
 Stacks: the default kube-scheduler, [Kueue](https://github.com/kubernetes-sigs/kueue),
 [Volcano](https://github.com/volcano-sh/volcano) and [KAI Scheduler](https://github.com/kai-scheduler/KAI-Scheduler),
-the scheduler at the core of the newly open-sourced [NVIDIA Run:ai](https://github.com/dsx-ai-factory/run-ai).
+the scheduler at the core of the newly open-sourced [NVIDIA Run:ai](https://github.com/dsx-ai-factory/run-ai), each
+as installed and, where it matters, configured to bin-pack GPUs.
 
-## Results
+## The finding: most schedulers don't bin-pack GPUs until you tell them to
 
-A mixed 256-GPU fleet (16 x 8 H100, 16 x 4 L40S, 32 x 2 L4), 131 jobs from three teams over 8 hours, about 107% of
-capacity. Reference simulation; see [how close the model is](#checked-against-the-real-schedulers).
+Out of the box, only KAI Scheduler packs GPU pods by their GPUs. The default kube-scheduler and Kueue score nodes by
+cpu and memory, so a GPU-only pod lands on any node that fits. Volcano's binpack packs the 100m cpu it charges a pod
+without requests, so it stacks small pods on whichever node already has the most. One setting fixes each
+([why, with sources, and the exact config](docs/gpu-scoring.md)).
 
-![Cost per useful GPU-hour, time to finish and p95 queue wait for each stack on the 256-GPU fleet](results/mixed-256.svg)
+The same 12-job trace on the **real schedulers** (two 8-GPU H100 nodes, four 4-GPU L40S nodes; kind + kwok in CI,
+[results](results/cluster/README.md)):
 
-| | default | Kueue | Volcano | KAI |
-|---|---|---|---|---|
-| Time to finish all work | 26.0 h | 26.9 h | **19.9 h** | **19.9 h** |
-| Useful GPU utilisation | 32.9% | 32.0% | 43.0% | **44.4%** |
-| Queue wait p95 | 698 min | 596 min | 183 min | **122 min** |
-| GPUs held idle by half-placed gangs | 319 GPU-h | **0** | **0** | **0** |
-| Work lost to preemption | **0** | 11 GPU-h | **0** | 72 GPU-h |
-| Cost per useful GPU-hour | $5.09 | $5.25 | **$3.90** | **$3.90** |
+| Real scheduler | Time to finish | Queue wait p95 | Cost per useful GPU-hour |
+|---|---|---|---|
+| default kube-scheduler | 7.8 h | 338 min | $5.25 |
+| default + GPU `MostAllocated` profile | **7.3 h** | 149 min | $4.19 |
+| Volcano v1.16.0 | 9.9 h | 391 min | $5.34 |
+| Volcano + `binpack.resources: nvidia.com/gpu` | **7.3 h** | **80 min** | **$3.97** |
+| Kueue v0.20.1 | 7.3 h | 100 min | $3.97 |
+| Kueue + GPU `MostAllocated` profile | 7.3 h | 120 min | $3.97 |
+| KAI Scheduler 0.18.5 | **7.3 h** | 81 min | **$3.97** |
 
-What the numbers say:
+What happened, from the recorded placements (`gsb timeline`):
 
-- **Bin-packing is the lever, not gang scheduling.** [`gsb ablate`](#quick-start) switches behaviours on one at a time.
-  Gang scheduling alone removes the 319 stranded GPU-hours but makes this trace *slower* (28.1 h), because whole gangs
-  wait for room that spreading never leaves. Bin-packing, with or without gangs, cuts it to 19.9 h.
-- **Across ten traces, not just one, the bin-packing stacks are about 19% cheaper.** Volcano and KAI average $4.91 per
-  useful GPU-hour against $6.08 for the default scheduler, and are the cheapest on 8 of 10 seeds. The default
-  scheduler wins on 2, so this is a strong tendency, not a law ([sweep](results/sweep-mixed-256.md)).
-- **Preemption protects interactive work.** On the 32-GPU lab ([full results](results/README.md)), every stack that
-  preempts by priority keeps notebook waits at 0 min p95; Volcano's default configuration doesn't preempt, and
-  notebooks wait 31 min. The price is lost work: KAI's reclaim cost 72 GPU-hours of training progress on the big
-  fleet, even with 30-minute checkpoints.
+- **Volcano as installed** put every notebook and inference pod on one H100 node until it was full. The 16-GPU training
+  gang needs both H100 nodes, so it waited seven hours for those inference pods to end. Configured to score GPUs, it
+  put them all on the L40S nodes: **26% faster and 26% cheaper per useful GPU-hour**.
+- **The default scheduler** scattered small pods across H100 and L40S nodes alike, and the training gang started
+  2.5 hours later than with GPU-aware placement. A second scheduler profile cut its cost per useful GPU-hour by 20%.
+- **Kueue** gets most of the benefit from admitting whole workloads by quota; on this trace placement changed little.
+
+At fleet scale, in simulation (256 GPUs, 131 jobs per trace, [ten traces](results/sweep-mixed-256-tuned.md)), the
+saving is smaller but holds for every stack: GPU bin-packing lowers the mean cost per useful GPU-hour from $5.31 to
+$5.21 for the default scheduler, $5.11 to $4.92 for Kueue and $5.12 to $4.92 for Volcano, which matches KAI's $4.92.
+
+Two more things the numbers say:
+
+- **Spreading GPU pods is what really hurts.** [`gsb ablate`](#quick-start) switches behaviours on one at a time. On the
+  256-GPU sample trace, placing pods on the node with the most free GPUs takes 26.0 h; random placement and
+  bin-packing both finish in 19.9 h. A scheduler that ignores GPUs is a lottery; one that spreads them is a loss.
+- **Preemption protects interactive work, at a price.** On the 32-GPU lab ([full results](results/README.md)),
+  every stack that preempts by priority keeps notebook waits at 0 min p95; Volcano's default doesn't preempt, and
+  notebooks wait 31 min. KAI's reclaim cost 72 GPU-hours of training progress on the big fleet, even with 30-minute
+  checkpoints.
 
 ## Checked against the real schedulers
 
 The [cluster workflow](.github/workflows/cluster.yml) installs each real scheduler on a kind cluster with
-[kwok](https://kwok.sigs.k8s.io/) GPU nodes, replays a 12-job trace, and compares the result with the model.
-First runs ([details](results/cluster/README.md)):
+[kwok](https://kwok.sigs.k8s.io/) GPU nodes on every push, replays the trace, and compares the result with the model
+job by job. Over 100 placement seeds, the model's median is within 4% of the real Volcano and inside the range of
+the real default scheduler and Kueue; the stacks that pack GPUs are a consistent 6% slower on the real control plane
+(7.3 h against 6.9 h), which is scheduling latency the model leaves out
+([methodology](docs/methodology.md#how-close-is-the-model)).
 
-| Stack | Time to finish: model | Real scheduler |
-|---|---|---|
-| default | 10.6 h | 9.4 h |
-| KAI 0.18.5 | 6.9 h | 7.7 h |
-| Kueue v0.20.1 | 9.5 h | 7.7 h |
-| Volcano v1.16.0 | 6.9 h | **12.8 h** |
-
-The model is within about 11% for the default scheduler and KAI. It underestimates Kueue, and it badly overestimates
-Volcano, whose default configuration adds least-requested node scoring, queue caps and an admission gate that the
-preset doesn't model. So: use the simulation to reason about behaviours, and cluster runs before choosing a scheduler.
-That gap is documented in the [methodology](docs/methodology.md#how-close-is-the-model), not tuned away.
-
-The cluster runs check themselves: every pod's observed runtime is compared with its expected runtime, and the run
-fails if they disagree. That check caught a real bug during development, a kwok setting that made every fake pod
-finish instantly ([write-up](docs/cluster-runs.md#how-a-run-is-checked)).
+The runs check themselves: each pod's runtime against its expected runtime, and the time from being bound to a node
+to starting. Those checks caught two kwok settings that made results look plausible and wrong: a jitter value that
+finished every pod instantly, and default pod-create and pod-ready delays that idled every pod's GPUs for 30 trace
+minutes ([write-up](docs/cluster-runs.md#how-a-run-is-checked)). Comparing placements, not totals, is also what
+showed the first Volcano model was wrong.
 
 ## Quick start
 
@@ -76,6 +84,7 @@ gsb chart results.json -o results.svg                     # bar charts
 gsb sweep --fleet fleets/mixed-256.yaml --seeds 1-10      # mean and spread over ten traces
 gsb sweep --fleet fleets/mixed-256.yaml --seeds 1-5 --rates 8,12,16,20   # load curve
 gsb ablate --fleet fleets/mixed-256.yaml --trace my-trace.jsonl          # which behaviour causes a gain
+gsb sweep --fleet fleets/mixed-256.yaml --seeds 1-10 --stacks volcano,volcano-binpack,kai  # as installed vs tuned
 ```
 
 Bring your own fleet (node pools, GPU models, prices) and trace (one JSON object per job; jobs can require a GPU
@@ -87,6 +96,8 @@ Needs Docker, kind, kubectl and Helm ([guide](docs/cluster-runs.md)):
 
 ```bash
 make cluster STACK=kai          # kind + kwok, install KAI, replay the smoke trace, compare with the model
+make cluster STACK=volcano-binpack   # or any tuned variant: default-binpack, kueue-binpack
+gsb timeline cluster-kai.json --stack kai   # which job held which node, and when
 ```
 
 ## How it works
@@ -112,9 +123,9 @@ and models no hardware effects. Every modelling choice and its source is in [doc
 | Part | State |
 |---|---|
 | Fleets, traces, generator, GPU-model requirements | Done, tested |
-| Reference simulator, four presets, metrics, reports, charts, sweeps, load curves, ablation | Done, tested; committed results reproduced in CI |
-| Real-scheduler runs on kind + kwok (default, Kueue, Volcano, KAI) with self-checking | Done, in CI on every push |
-| Closing the Volcano model gap; larger cluster traces | Next |
+| Reference simulator, seven presets (four stacks as installed, three tuned), metrics, reports, charts, sweeps, load curves, ablation | Done, tested; committed results reproduced in CI |
+| Real-scheduler runs on kind + kwok for all seven, with runtime and start-lag checks and per-pod placements | Done, in CI on every push |
+| Larger cluster traces | Next |
 | NVIDIA Run:ai full platform, DRA, topology-aware placement | Planned |
 
 Contributions welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
