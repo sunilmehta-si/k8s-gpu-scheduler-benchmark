@@ -45,6 +45,9 @@ class ClusterRunTests(unittest.TestCase):
         stack = doc["stacks"]["kueue"]
         self.assertEqual(stack["jobs_finished"], 2)
         self.assertEqual(stack["queue_wait"]["max_min"], 0.0)       # b was scheduled at its (compressed) arrival
+        self.assertEqual(stack["placements"], [                     # wall-clock seconds x60 back to trace seconds
+            {"job": "a", "replica": 0, "node": "n-000", "placed_s": 0.0, "start_s": 0.0, "end_s": 600.0},
+            {"job": "b", "replica": 0, "node": "n-001", "placed_s": 60.0, "start_s": 60.0, "end_s": 660.0}])
 
     def test_timeout_reports_what_finished(self):
         clock = Clock(0.0)

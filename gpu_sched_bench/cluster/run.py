@@ -57,4 +57,5 @@ def run_cluster(kube, fleet: Fleet, jobs: list[Job], stack: str, shares: dict[st
     doc["speedup"] = speedup
     doc["runtime_check"] = check
     doc["stacks"][stack] = results.summarize(result, {"name": stack, "source": "cluster"})
+    doc["stacks"][stack]["placements"] = results.placements(result)
     return doc

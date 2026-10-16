@@ -38,3 +38,16 @@ class SimulateCliTests(unittest.TestCase):
         with redirect_stderr(io.StringIO()):
             self.assertEqual(main([*ARGS, "--stacks", "slurm"]), 2)
             self.assertEqual(main(["simulate", "--fleet", "missing.yaml", "--trace", ARGS[4]]), 2)
+
+
+class PlacementsTests(unittest.TestCase):
+    def test_every_replica_with_its_node_and_times(self):
+        from gpu_sched_bench.fleet import parse
+        from gpu_sched_bench.results import placements
+        from gpu_sched_bench.sim import Policy, simulate
+        from gpu_sched_bench.trace import Job
+        fleet = parse({"name": "t", "pools": [{"name": "n", "count": 1, "gpus_per_node": 8}]})
+        jobs = [Job("a", 0, "red", "training", 1, 8, 100), Job("b", 10, "red", "inference", 2, 4, 50, 0, False)]
+        rows = placements(simulate(fleet, jobs, Policy("default")))
+        self.assertEqual([(r["job"], r["replica"], r["node"], r["start_s"], r["end_s"]) for r in rows],
+                         [("a", 0, "n-000", 0.0, 100.0), ("b", 0, "n-000", 100.0, 150.0), ("b", 1, "n-000", 100.0, 150.0)])

@@ -23,6 +23,23 @@ def summarize(result, policy: dict) -> dict:
             "fairness": metrics.fairness(result), "cost": metrics.cost(result)}
 
 
+def _s(t: float | None) -> float | None:
+    return None if t is None else round(t, 1)
+
+
+def placements(result) -> list[dict]:
+    """Where and when every replica ran, in trace seconds: the evidence behind a run's metrics.
+
+    A replica that never got a node has node null. For gang jobs the start is when the whole gang began working."""
+    rows = []
+    for job_id in sorted(result.records):
+        rec = result.records[job_id]
+        for i in range(rec.job.replicas):
+            rows.append({"job": job_id, "replica": i, "node": rec.nodes[i], "placed_s": _s(rec.placed_at[i]),
+                         "start_s": _s(rec.replica_start[i]), "end_s": _s(rec.replica_end[i])})
+    return rows
+
+
 def document(fleet: Fleet, jobs: list[Job], shares: dict[str, float], trace_name: str, mode: str) -> dict:
     return {
         "schema_version": SCHEMA_VERSION,
