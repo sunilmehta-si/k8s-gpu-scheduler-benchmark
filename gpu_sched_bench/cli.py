@@ -83,7 +83,9 @@ def _parser() -> argparse.ArgumentParser:
     cl = sub.add_parser("cluster", help="Run a trace on a real cluster with kwok GPU nodes.")
     csub = cl.add_subparsers(dest="cluster_command", required=True)
     cr = csub.add_parser("run", help="Create kwok nodes, apply the stack's queues, replay the trace, collect results.")
-    cr.add_argument("--stack", required=True, help="The scheduler installed in the cluster: default, kueue, volcano or kai.")
+    cr.add_argument("--stack", required=True,
+                    help="The scheduler installed in the cluster: default, kueue, volcano or kai, or a tuned variant "
+                         "such as volcano-binpack (scripts/install-<stack>.sh installs each).")
     cr.add_argument("--fleet", required=True, help="Fleet YAML file.")
     cr.add_argument("--trace", required=True, help="Trace JSONL file.")
     cr.add_argument("--speedup", type=float, default=60.0, help="Trace seconds per wall second (default: 60).")

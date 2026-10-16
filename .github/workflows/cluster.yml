@@ -1,7 +1,8 @@
 name: cluster
 
-# Replays the smoke trace on a real kind cluster with kwok GPU nodes, once per scheduling stack, and puts
-# the cluster results next to the model's prediction for the same trace.
+# Replays the smoke trace on a real kind cluster with kwok GPU nodes, once per scheduling stack (as installed,
+# and the tuned variants configured to bin-pack GPUs), and puts the cluster results next to the model's
+# prediction for the same trace.
 on:
   push:
     branches: [main]
@@ -23,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        stack: [default, kueue, volcano, kai]
+        stack: [default, kueue, volcano, kai, default-binpack, kueue-binpack, volcano-binpack]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
