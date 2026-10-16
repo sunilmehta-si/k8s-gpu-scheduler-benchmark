@@ -50,7 +50,8 @@
         "quotas": {},
         "borrowing": false,
         "reclaim": false,
-        "priority_preemption": "global"
+        "priority_preemption": "global",
+        "seed": 0
       },
       "makespan_h": 26.03,
       "jobs": 131,
@@ -175,7 +176,8 @@
         },
         "borrowing": true,
         "reclaim": true,
-        "priority_preemption": "team"
+        "priority_preemption": "team",
+        "seed": 0
       },
       "makespan_h": 26.85,
       "jobs": 131,
@@ -300,7 +302,8 @@
         },
         "borrowing": true,
         "reclaim": false,
-        "priority_preemption": "none"
+        "priority_preemption": "none",
+        "seed": 0
       },
       "makespan_h": 19.93,
       "jobs": 131,
@@ -425,7 +428,8 @@
         },
         "borrowing": true,
         "reclaim": true,
-        "priority_preemption": "team"
+        "priority_preemption": "team",
+        "seed": 0
       },
       "makespan_h": 19.93,
       "jobs": 131,

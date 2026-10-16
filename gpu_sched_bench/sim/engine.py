@@ -7,6 +7,7 @@ stranded GPU time. Independent replicas (inference, notebooks) start working as 
 from __future__ import annotations
 
 import heapq
+import random
 from dataclasses import dataclass, field
 
 from ..fleet import Fleet
@@ -87,6 +88,7 @@ class Result:
 class Simulator:
     def __init__(self, fleet: Fleet, jobs: list[Job], policy: Policy):
         self.fleet, self.policy = fleet, policy
+        self.rng = random.Random(policy.seed)
         self.nodes = [NodeState(n.name, n.pool, n.gpus, n.gpus, n.price_per_gpu_hour, n.gpu_model) for n in fleet.nodes]
         self.by_name = {n.name: n for n in self.nodes}
         self.records = {j.id: JobRecord(j, [None] * j.replicas, [None] * j.replicas, [None] * j.replicas,
@@ -126,6 +128,8 @@ class Simulator:
             return None
         if self.policy.placement == "binpack":     # tightest fit: the busiest node that still has room
             return min(fits, key=lambda n: (free[n.name] - need, n.name)).name
+        if self.policy.placement == "random":      # every feasible node scores the same; pick one of them
+            return self.rng.choice(sorted(n.name for n in fits))
         # spread: the node with the most free GPUs; ties broken by name for determinism
         return min(fits, key=lambda n: (-free[n.name], n.name)).name
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-PLACEMENTS = ("spread", "binpack")
+PLACEMENTS = ("spread", "binpack", "random")
 QUEUES = ("best-effort", "strict")
 PRIORITY_PREEMPTION = ("none", "team", "global")
 
@@ -12,7 +12,10 @@ PRIORITY_PREEMPTION = ("none", "team", "global")
 class Policy:
     name: str
     placement: str = "spread"       # spread: most free GPUs first (kube-scheduler's LeastAllocated default);
-                                    # binpack: fewest free GPUs that still fit, keeping whole nodes free for big jobs
+                                    # binpack: fewest free GPUs that still fit, keeping whole nodes free for big jobs;
+                                    # random: any node that fits, chosen with a seeded generator. This is what a
+                                    # scheduler does when its scoring ignores GPUs: every feasible node ties
+                                    # and the scheduler picks one of the tied nodes at random
     queue: str = "best-effort"      # best-effort: a job that doesn't fit is skipped and later jobs may start;
                                     # strict: nothing behind the head of the queue starts until it does
     gang: bool = False              # all-or-nothing: a gang job's replicas are placed together or not at all
@@ -20,6 +23,7 @@ class Policy:
     borrowing: bool = False         # a team may use other teams' unused quota (Kueue cohorts, KAI/Volcano queues)
     reclaim: bool = False           # a team within its quota evicts borrowers to get its GPUs back
     priority_preemption: str = "none"  # a job evicts lower-priority jobs: in its own team, anywhere, or never
+    seed: int = 0                   # for random placement; the same seed gives the same run
 
     def __post_init__(self):
         if self.placement not in PLACEMENTS:

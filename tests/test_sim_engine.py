@@ -25,6 +25,18 @@ class EngineTests(unittest.TestCase):
         r = simulate(FLEET, [job("a", gpus=2), job("b", gpus=2)], Policy("default"))
         self.assertNotEqual(r.records["a"].nodes[0], r.records["b"].nodes[0])
 
+    def test_random_placement_is_seeded_and_uses_any_feasible_node(self):
+        fleet = parse({"name": "t", "pools": [{"name": "n", "count": 8, "gpus_per_node": 8}]})
+        jobs = [job(f"j{i}", gpus=1) for i in range(8)]
+        def nodes(seed):
+            r = simulate(fleet, jobs, Policy("r", placement="random", seed=seed))
+            return [r.records[f"j{i}"].nodes[0] for i in range(8)]
+        self.assertEqual(nodes(1), nodes(1))
+        self.assertNotEqual(nodes(1), nodes(2))
+        self.assertGreater(len(set(nodes(1))), 1)            # neither packed onto one node nor forced apart
+        big = simulate(fleet, [job("a", gpus=1), job("b", gpus=8)], Policy("r", placement="random"))
+        self.assertNotEqual(big.records["a"].nodes[0], big.records["b"].nodes[0])   # only feasible nodes are drawn
+
     def test_pod_by_pod_gangs_interleave_and_deadlock(self):
         # Submitted together, the pods interleave: g1-0 takes node A, g2-0 takes most of node B, and then
         # neither g1-1 (8 GPUs) nor g2-1 (6 GPUs) fits anywhere. Both gangs hold GPUs forever.
@@ -85,7 +97,7 @@ class PlacementTests(unittest.TestCase):
 
     def test_unknown_policy_values_are_rejected(self):
         with self.assertRaises(ValueError):
-            Policy("x", placement="random")
+            Policy("x", placement="round-robin")
 
 
 class QueueTests(unittest.TestCase):
