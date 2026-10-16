@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import statistics
+from dataclasses import replace
 
 from . import __version__, metrics
 from .fleet import Fleet
@@ -35,7 +36,7 @@ def run_sweep(fleet: Fleet, stacks: list[str], seeds: list[int], rate: float, ho
         shares = equal_quotas([j.team for j in jobs]) if quotas == "equal" else {}
         row = {"seed": seed, "jobs": len(jobs), "stacks": {}}
         for stack in stacks:
-            r = simulate(fleet, jobs, preset(stack, shares))
+            r = simulate(fleet, jobs, replace(preset(stack, shares), seed=seed))   # placement luck varies per seed too
             core, frag, fair, cost = metrics.core(r), metrics.fragmentation(r), metrics.fairness(r), metrics.cost(r)
             row["stacks"][stack] = {k: fn(core, frag, fair, cost) for k, (fn, _) in METRICS.items()}
         per_seed.append(row)
