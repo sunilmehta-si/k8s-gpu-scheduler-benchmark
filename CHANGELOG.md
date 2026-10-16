@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.3.0] - 2026-10-16
+
+### Added
+- Tuned variants `default-binpack`, `kueue-binpack` and `volcano-binpack`: the same stacks configured to bin-pack GPUs.
+  `gsb manifests --part scheduler` renders their configuration (a second kube-scheduler with a `MostAllocated`
+  profile on `nvidia.com/gpu`; Volcano's scheduler ConfigMap with `binpack.resources`), with install scripts and runs
+  in the cluster workflow for all seven stacks.
+- Placements: cluster runs record where and when every pod ran, `gsb simulate --placements` does the same for the
+  model, `gsb timeline` lists them per node, and `gsb compare` adds a per-job table of start times and GPU pools.
+- Placement models `random` (seeded; what a scheduler does when its scoring ignores GPUs) and `most-pods`, and
+  Volcano's 1.2x overcommit enqueue gate.
+- A start-lag check in cluster runs: pods must start within 2 s of being bound, or `--strict` fails the run.
+- The cluster workflow keeps pod objects, events and scheduler logs, and posts the comparison and timelines.
+- docs/gpu-scoring.md: which schedulers bin-pack GPUs out of the box, why, and the setting that fixes each.
+- A ten-trace sweep of all seven stacks (`results/sweep-mixed-256-tuned.md`).
+
+### Changed
+- Presets follow what the schedulers actually do with GPU-only pods: default and Kueue place at random among
+  feasible nodes (kube-scheduler scores only cpu and memory), Volcano places by pod count (its binpack packs the
+  default cpu request) behind the overcommit gate. KAI still bin-packs GPUs.
+- The headline: out of the box only KAI bin-packs GPUs. On the real schedulers, configuring it cut Volcano's time to
+  finish and cost per useful GPU-hour by 26% and the default scheduler's cost by 20% on the smoke trace; in
+  simulation the saving holds for every stack over ten traces. This replaces 0.2.0's "bin-packing stacks are about
+  19% cheaper", which compared against a default scheduler that spread GPU pods, which it does not do.
+- The model is within 4% of real Volcano (median over 100 placement seeds) and 6% of every GPU-packing stack.
+- Sweeps seed placement with the trace seed; the ablation starts from random placement and adds a GPU-spread step.
+
+### Fixed
+- kwok's pod-create and pod-ready stages kept their default 1-6 s delays, which idled every bound pod's GPUs for a
+  median 30 trace minutes at 300x on every stack. Both are now 0 s.
+- Preempting a job whose replicas had partly finished returned the finished replicas' GPUs, quota and cost again.
+- `make cluster`'s STACK value no longer carries trailing spaces from a comment.
+
+[0.3.0]: https://github.com/sunilmehta-si/k8s-gpu-scheduler-benchmark/compare/v0.2.0...v0.3.0
+
 ## [0.2.0] - 2026-10-15
 
 ### Added

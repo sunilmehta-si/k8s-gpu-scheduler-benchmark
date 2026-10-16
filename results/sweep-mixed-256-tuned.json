@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "tool_version": "0.2.0",
+  "tool_version": "0.3.0",
   "mode": "simulation-sweep",
   "fleet": {
     "name": "mixed-256",
