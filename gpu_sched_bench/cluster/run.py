@@ -51,7 +51,7 @@ def run_cluster(kube, fleet: Fleet, jobs: list[Job], stack: str, shares: dict[st
     log(f"{done}/{expected} pods finished" + ("" if done == expected else " before the timeout"))
     check = runtime_check(jobs, runs, speedup)
     log(f"runtime check: {'ok' if check['ok'] else 'FAILED'} ({check.get('median_ratio', '-')}x expected over "
-        f"{check['pods_checked']} pods) {check['reason']}".rstrip())
+        f"{check['pods_checked']} pods, median start lag {check.get('median_start_lag_s', '-')} s) {check['reason']}".rstrip())
     result = to_result(fleet, jobs, runs, stack, replay_start, speedup, collected_at=clock())
     doc = results.document(fleet, jobs, shares, trace_name, "cluster")
     doc["speedup"] = speedup

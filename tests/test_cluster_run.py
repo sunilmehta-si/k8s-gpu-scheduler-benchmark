@@ -35,8 +35,10 @@ class ClusterRunTests(unittest.TestCase):
         from gpu_sched_bench.cluster.collect import ts
         t0 = ts("2026-10-15T00:00:00Z")
         kube = FakeKubectl({"pods": {"items": [finished_pod("a", "n-000", 0, 10), finished_pod("b", "n-001", 1, 11)]}})
+        logs = []
         doc = run_cluster(kube, FLEET, JOBS, "kueue", {"red": 0.5, "blue": 0.5}, speedup=60, clock=Clock(t0),
-                          sleep=lambda s: None)
+                          sleep=lambda s: None, log=logs.append)
+        self.assertIn("median start lag 0.0 s", [m for m in logs if m.startswith("runtime check")][0])
         kinds = [d["kind"] for chunk in kube.applied for d in yaml.safe_load_all(chunk)]
         self.assertEqual(kinds[:2], ["Node", "Node"])
         self.assertIn("ClusterQueue", kinds)
