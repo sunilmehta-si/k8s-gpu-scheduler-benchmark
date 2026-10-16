@@ -60,9 +60,12 @@ recorded placements (`gsb timeline`) showed it. The manifests now set the pod-re
 
 ## In CI
 
-The [`cluster` workflow](../.github/workflows/cluster.yml) runs the smoke trace through all four stacks on every
-push to `main` and weekly, posts the cluster and model reports to the job summary, and uploads both results files.
-Versions are pinned in the install scripts: kwok v0.8.0, Kueue v0.20.1, Volcano v1.16.0, KAI Scheduler 0.18.5.
+The [`cluster` workflow](../.github/workflows/cluster.yml) runs the smoke trace through seven stacks on every push
+to `main` and weekly: the four as installed, and default, Kueue and Volcano configured to bin-pack GPUs
+([docs/gpu-scoring.md](gpu-scoring.md)). Each job posts the cluster and model reports, the model-vs-cluster comparison
+with its per-job table, and both timelines to the job summary. It uploads both results files and the raw evidence:
+pod objects, events and scheduler logs. Versions are pinned in the install scripts: kwok v0.8.0, Kueue v0.20.1,
+Volcano v1.16.0, KAI Scheduler 0.18.5; the GPU bin-packing kube-scheduler matches the cluster's version.
 
 ## Known gaps
 
