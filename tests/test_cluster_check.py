@@ -22,5 +22,14 @@ class RuntimeCheckTests(unittest.TestCase):
         self.assertFalse(c["ok"])
         self.assertIn("pod/general", c["reason"])
 
+    def test_pods_that_sat_bound_before_starting_fail_loudly(self):
+        late = [PodRun("a", "a-0", "n", 0, 6, 8, "Succeeded"), PodRun("b", "b-0", "n", 0, 6, 16, "Succeeded")]
+        c = runtime_check(JOBS, late, speedup=300)       # ran their 2 s and 10 s, but 6 s after being bound
+        self.assertFalse(c["ok"])
+        self.assertEqual((c["median_ratio"], c["median_start_lag_s"]), (1.0, 6.0))
+        self.assertIn("pod-ready", c["reason"])
+        self.assertIn("30 trace minutes", c["reason"])
+        self.assertEqual(runtime_check(JOBS, [run("a", 0, 10.5), run("b", 0, 49)], 60)["median_start_lag_s"], 0.0)
+
     def test_nothing_finished(self):
         self.assertFalse(runtime_check(JOBS, [PodRun("a", "a-0", None, None, None, None, "Pending")], 60)["ok"])
