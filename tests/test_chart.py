@@ -17,8 +17,9 @@ class ChartTests(unittest.TestCase):
         self.assertIn("mixed-256", root.find(f"{ns}title").text)
         bars = root.findall(f"{ns}rect")
         self.assertEqual(len(bars), 3 * 4)                       # three panels x four stacks
-        # volcano and kai tie on cost and on time to finish, so both are green there; kai alone on queue wait
-        self.assertEqual(sum(1 for b in bars if b.get("class") == "best"), 2 + 2 + 1)
+        # all four stacks tie on cost and on time to finish on this trace, so neither panel has a winner;
+        # kai alone is best on queue wait
+        self.assertEqual(sum(1 for b in bars if b.get("class") == "best"), 0 + 0 + 1)
         self.assertIn("prefers-color-scheme: dark", root.find(f"{ns}style").text)
 
     def test_cli(self):

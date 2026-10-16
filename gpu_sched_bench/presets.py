@@ -7,14 +7,18 @@ so the model and a cluster run describe the same setup. Cluster runs of the real
 check on these models.
 
 - default: kube-scheduler with the NVIDIA device plugin. Pods are scheduled one at a time (no gang),
-  NodeResourcesFit scores with LeastAllocated (spread), unschedulable pods are skipped. No quotas. Pods
-  preempt lower-priority pods anywhere in the cluster (gsb's PriorityClasses use PreemptLowerPriority).
+  unschedulable pods are skipped. No quotas. Pods preempt lower-priority pods anywhere in the cluster (gsb's
+  PriorityClasses use PreemptLowerPriority). Placement is random among the nodes that fit: NodeResourcesFit's
+  default LeastAllocated strategy scores only cpu and memory (weight 1 each), so GPUs are not scored at all.
+  A pod that requests only GPUs counts as kube-scheduler's non-zero default (100m cpu, 200Mi memory), which
+  moves a 96-core node's integer score by about one point per ten pods; every feasible node ties, and
+  kube-scheduler picks among tied nodes at random. See docs/gpu-scoring.md.
 - kueue: Kueue admits whole workloads against ClusterQueue quotas (all-or-nothing admission; with
   waitForPodsReady a workload that can't get all its pods is evicted, which this models as gang placement),
   BestEffortFIFO queueing and cohort borrowing. Reclaim is not a Kueue default (reclaimWithinCohort
   defaults to Never); gsb's ClusterQueues set it to Any, so the preset reclaims, and withinClusterQueue:
   LowerPriority lets a team's higher-priority workloads preempt its own lower-priority ones. Pods are then
-  placed by kube-scheduler, so placement is spread.
+  placed by kube-scheduler, so placement is random among feasible nodes, as for default.
 - volcano: gang plugin (minAvailable), binpack plugin, proportion plugin for queue shares with borrowing
   of idle capacity. Reclaim is configurable but off in the default action list, so it is off here.
   Known gap, from the first cluster runs: Volcano v1.16's default config also scores with nodeorder
@@ -35,9 +39,9 @@ def preset(name: str, quotas: dict[str, float] | None = None) -> Policy:
     """`quotas` are team shares of the fleet; stacks that support quotas get them, the default stack ignores them."""
     q = dict(quotas or {})
     if name == "default":
-        return Policy("default", placement="spread", queue="best-effort", gang=False, priority_preemption="global")
+        return Policy("default", placement="random", queue="best-effort", gang=False, priority_preemption="global")
     if name == "kueue":
-        return Policy("kueue", placement="spread", queue="best-effort", gang=True, quotas=q, borrowing=bool(q),
+        return Policy("kueue", placement="random", queue="best-effort", gang=True, quotas=q, borrowing=bool(q),
                       reclaim=bool(q), priority_preemption="team")
     if name == "volcano":
         return Policy("volcano", placement="binpack", queue="best-effort", gang=True, quotas=q, borrowing=bool(q))
