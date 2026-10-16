@@ -112,6 +112,33 @@ class VolcanoManifestTests(unittest.TestCase):
         self.assertEqual(manifests.render("volcano", FLEET, JOBS, self.Q, part="scheduler"), [])
 
 
+class KubeBinpackManifestTests(unittest.TestCase):
+    def test_second_scheduler_scores_gpus_with_most_allocated(self):
+        docs = manifests.render("default-binpack", FLEET, JOBS, {}, part="scheduler", kube_version="v1.36.2")
+        self.assertEqual(kinds(docs), ["ServiceAccount", "ClusterRoleBinding", "ClusterRoleBinding", "RoleBinding",
+                                       "ConfigMap", "Deployment"])
+        config = yaml.safe_load(docs[4]["data"]["scheduler-config.yaml"])
+        profile, = config["profiles"]
+        self.assertEqual(profile["schedulerName"], "gsb-binpack")
+        self.assertEqual(profile["pluginConfig"][0]["args"]["scoringStrategy"],
+                         {"type": "MostAllocated", "resources": [{"name": "nvidia.com/gpu", "weight": 1}]})
+        container = docs[5]["spec"]["template"]["spec"]["containers"][0]
+        self.assertEqual(container["image"], "registry.k8s.io/kube-scheduler:v1.36.2")
+        self.assertTrue(container["securityContext"]["runAsNonRoot"])
+        self.assertEqual(manifests.render("kueue-binpack", FLEET, JOBS, {}, part="scheduler", kube_version="v1.36.2"), docs)
+
+    def test_workloads_use_the_binpack_scheduler(self):
+        train, _ = manifests.render("default-binpack", FLEET, JOBS, {}, part="jobs")
+        self.assertEqual(train["spec"]["template"]["spec"]["schedulerName"], "gsb-binpack")
+        q = {"research": 0.5, "product": 0.5}
+        kq, = [d for d in manifests.render("kueue-binpack", FLEET, JOBS[:1], q, part="jobs")]
+        plain, = manifests.render("kueue", FLEET, JOBS[:1], q, part="jobs")
+        self.assertEqual(kq["metadata"]["labels"], plain["metadata"]["labels"])       # same LocalQueue
+        self.assertEqual(kq["spec"]["template"]["spec"]["schedulerName"], "gsb-binpack")
+        self.assertEqual(kinds(manifests.render("kueue-binpack", FLEET, JOBS, q, part="setup")),
+                         kinds(manifests.render("kueue", FLEET, JOBS, q, part="setup")))
+
+
 class KaiManifestTests(unittest.TestCase):
     Q = {"research": 0.5, "product": 0.5}
 
@@ -134,7 +161,7 @@ class KaiManifestTests(unittest.TestCase):
 
     def test_every_stack_renders_the_sample_trace(self):
         from gpu_sched_bench.fleet import load as load_fleet
-        from gpu_sched_bench.presets import STACKS, equal_quotas
+        from gpu_sched_bench.presets import ALL_STACKS as STACKS, equal_quotas
         from gpu_sched_bench.trace import load as load_trace
         fleet, jobs = load_fleet(ROOT / "fleets/mixed-256.yaml"), load_trace(ROOT / "traces/mixed-256-8h.jsonl")
         for stack in STACKS:

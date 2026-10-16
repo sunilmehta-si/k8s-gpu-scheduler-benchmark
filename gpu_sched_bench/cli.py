@@ -53,6 +53,8 @@ def _parser() -> argparse.ArgumentParser:
                     help="setup: namespaces, priorities and queues; jobs: one Job per trace job; scheduler: the "
                          "scheduler configuration a tuned variant installs (default: all).")
     mf.add_argument("--speedup", type=float, default=1.0, help="Divide job durations by this, e.g. 60 (default: 1).")
+    mf.add_argument("--kube-version", default="v1.37.0",
+                    help="Cluster version, for the image of a tuned variant's kube-scheduler (default: v1.37.0).")
     mf.add_argument("--quotas", choices=("equal", "none"), default="equal", help="Team quotas (default: equal).")
     ch = sub.add_parser("chart", help="Draw an SVG bar chart of a results file (cost, time to finish, queue wait).")
     ch.add_argument("results", help="Results JSON from gsb simulate or gsb cluster run.")
@@ -233,7 +235,7 @@ def _cmd_manifests(args: argparse.Namespace) -> int:
     try:
         fleet, jobs = load_fleet(args.fleet), load_trace(args.trace)
         shares = equal_quotas([j.team for j in jobs]) if args.quotas == "equal" else {}
-        docs = manifests.render(args.stack, fleet, jobs, shares, args.speedup, args.part)
+        docs = manifests.render(args.stack, fleet, jobs, shares, args.speedup, args.part, args.kube_version)
     except (FleetError, TraceError, OSError, ValueError) as exc:
         print(f"gsb: {exc}", file=sys.stderr)
         return 2

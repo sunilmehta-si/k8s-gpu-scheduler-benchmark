@@ -209,30 +209,90 @@ tiers:
 """
 
 
-def volcano_binpack_scheduler(fleet: Fleet, jobs: list[Job], quotas: dict[str, float]) -> list[dict]:
+def volcano_binpack_scheduler(kube_version: str) -> list[dict]:
     """Replaces the installed scheduler's ConfigMap; restart volcano-scheduler afterwards (scripts do)."""
     return [{"apiVersion": "v1", "kind": "ConfigMap",
              "metadata": {"name": "volcano-scheduler-configmap", "namespace": "volcano-system"},
              "data": {"volcano-scheduler.conf": VOLCANO_BINPACK_CONF}}]
 
 
+# default-binpack and kueue-binpack: a second kube-scheduler whose one profile scores nvidia.com/gpu with
+# NodeResourcesFit's MostAllocated strategy, run as in the Kubernetes "Configure Multiple Schedulers" task.
+# The default profile scores only cpu and memory (LeastAllocated), so it cannot tell GPU nodes apart.
+BINPACK_SCHEDULER = "gsb-binpack"
+KUBE_VERSION = "v1.37.0"     # the kind node image the cluster workflow runs; match it with --kube-version
+
+
+def kube_binpack_scheduler(kube_version: str) -> list[dict]:
+    ns, name = "kube-system", BINPACK_SCHEDULER
+    config = {"apiVersion": "kubescheduler.config.k8s.io/v1", "kind": "KubeSchedulerConfiguration",
+              "leaderElection": {"leaderElect": False},
+              "profiles": [{"schedulerName": name, "pluginConfig": [{"name": "NodeResourcesFit", "args": {
+                  "scoringStrategy": {"type": "MostAllocated", "resources": [{"name": "nvidia.com/gpu", "weight": 1}]}}}]}]}
+    probe = {"httpGet": {"path": "/healthz", "port": 10259, "scheme": "HTTPS"}, "initialDelaySeconds": 5}
+    container = {
+        "name": "kube-scheduler", "image": f"registry.k8s.io/kube-scheduler:{kube_version}",
+        "command": ["kube-scheduler", "--config=/etc/gsb/scheduler-config.yaml"],
+        "livenessProbe": probe, "readinessProbe": probe,
+        "resources": {"requests": {"cpu": "100m", "memory": "128Mi"}, "limits": {"memory": "512Mi"}},
+        "securityContext": {"allowPrivilegeEscalation": False, "readOnlyRootFilesystem": True,
+                            "runAsNonRoot": True, "runAsUser": 65532, "capabilities": {"drop": ["ALL"]}},
+        "volumeMounts": [{"name": "config", "mountPath": "/etc/gsb", "readOnly": True}, {"name": "tmp", "mountPath": "/tmp"}],
+    }
+    import yaml
+    binding = lambda kind, role, scope: {  # noqa: E731
+        "apiVersion": "rbac.authorization.k8s.io/v1", "kind": kind,
+        "metadata": {"name": f"{name}-{role.split(':')[-1]}", **({"namespace": ns} if kind == "RoleBinding" else {})},
+        "roleRef": {"apiGroup": "rbac.authorization.k8s.io", "kind": scope, "name": role},
+        "subjects": [{"kind": "ServiceAccount", "name": name, "namespace": ns}]}
+    return [
+        {"apiVersion": "v1", "kind": "ServiceAccount", "metadata": {"name": name, "namespace": ns}},
+        binding("ClusterRoleBinding", "system:kube-scheduler", "ClusterRole"),
+        binding("ClusterRoleBinding", "system:volume-scheduler", "ClusterRole"),
+        binding("RoleBinding", "extension-apiserver-authentication-reader", "Role"),
+        {"apiVersion": "v1", "kind": "ConfigMap", "metadata": {"name": f"{name}-config", "namespace": ns},
+         "data": {"scheduler-config.yaml": yaml.safe_dump(config, sort_keys=False)}},
+        {"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"name": name, "namespace": ns, "labels": {"app": name}},
+         "spec": {"replicas": 1, "selector": {"matchLabels": {"app": name}},
+                  "template": {"metadata": {"labels": {"app": name}},
+                               "spec": {"serviceAccountName": name, "priorityClassName": "system-cluster-critical",
+                                        "nodeSelector": {"kubernetes.io/os": "linux", "node-role.kubernetes.io/control-plane": ""},
+                                        "tolerations": [{"key": "node-role.kubernetes.io/control-plane", "operator": "Exists",
+                                                         "effect": "NoSchedule"}],
+                                        "containers": [container],
+                                        "volumes": [{"name": "config", "configMap": {"name": f"{name}-config"}},
+                                                    {"name": "tmp", "emptyDir": {}}]}}}},
+    ]
+
+
+def default_binpack_workload(job: Job, speedup: float) -> dict:
+    return batch_job(job, speedup, scheduler=BINPACK_SCHEDULER)
+
+
+def kueue_binpack_workload(job: Job, speedup: float) -> dict:
+    return batch_job(job, speedup, scheduler=BINPACK_SCHEDULER, labels={"kueue.x-k8s.io/queue-name": KUEUE_LOCAL_QUEUE})
+
+
 STACKS = {"default": (default_setup, default_workload), "kueue": (kueue_setup, kueue_workload),
           "volcano": (volcano_setup, volcano_workload), "kai": (kai_setup, kai_workload),
+          "default-binpack": (default_setup, default_binpack_workload),
+          "kueue-binpack": (kueue_setup, kueue_binpack_workload),
           "volcano-binpack": (volcano_setup, volcano_workload)}
 QUOTA_AWARE_WORKLOADS = {"volcano", "kai", "volcano-binpack"}   # workload renderers that need the quotas to pick a queue
 # Scheduler configuration that a tuned variant installs on top of the stack (gsb manifests --part scheduler).
-SCHEDULER_CONFIG = {"volcano-binpack": volcano_binpack_scheduler}
+SCHEDULER_CONFIG = {"volcano-binpack": volcano_binpack_scheduler, "default-binpack": kube_binpack_scheduler,
+                    "kueue-binpack": kube_binpack_scheduler}
 
 
 def render(stack: str, fleet: Fleet, jobs: list[Job], quotas: dict[str, float], speedup: float = 1.0,
-           part: str = "all") -> list[dict]:
+           part: str = "all", kube_version: str = KUBE_VERSION) -> list[dict]:
     if stack not in STACKS:
         raise ValueError(f"no manifests for stack '{stack}'; available: {', '.join(STACKS)}")
     if speedup <= 0:
         raise ValueError("speedup must be > 0")
     setup_fn, workload_fn = STACKS[stack]
     if part == "scheduler":
-        return SCHEDULER_CONFIG[stack](fleet, jobs, quotas) if stack in SCHEDULER_CONFIG else []
+        return SCHEDULER_CONFIG[stack](kube_version) if stack in SCHEDULER_CONFIG else []
     docs = []
     if part in ("all", "setup"):
         docs += common_setup(jobs) + setup_fn(fleet, jobs, quotas)
