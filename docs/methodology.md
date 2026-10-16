@@ -27,10 +27,15 @@ the code says where each one comes from ([`presets.py`](../gpu_sched_bench/prese
 
 | Stack | Gang | Placement | Queue | Team quotas | Borrowing | Reclaim | Priority preemption |
 |---|---|---|---|---|---|---|---|
-| default (kube-scheduler) | no, pod by pod | spread (LeastAllocated) | skip what doesn't fit | - | - | - | cluster-wide (gsb's PriorityClasses use PreemptLowerPriority) |
-| Kueue | yes (all-or-nothing admission, as with waitForPodsReady) | spread (kube-scheduler places) | BestEffortFIFO | yes | cohort | yes, because gsb configures reclaimWithinCohort: Any (Kueue's default is Never) | within a team (withinClusterQueue: LowerPriority) |
-| Volcano | yes (minAvailable) | binpack | skip what doesn't fit | queue weights | yes | no (not in the default actions) | no (not in the default actions) |
+| default (kube-scheduler) | no, pod by pod | random among nodes that fit (its scoring ignores GPUs) | skip what doesn't fit | - | - | - | cluster-wide (gsb's PriorityClasses use PreemptLowerPriority) |
+| Kueue | yes (all-or-nothing admission, as with waitForPodsReady) | random (kube-scheduler places) | BestEffortFIFO | yes | cohort | yes, because gsb configures reclaimWithinCohort: Any (Kueue's default is Never) | within a team (withinClusterQueue: LowerPriority) |
+| Volcano | yes (minAvailable) | most-pods (its binpack packs the default cpu request, not GPUs) | skip what doesn't fit, behind the 1.2x overcommit gate | queue weights | yes | no (not in the default actions) | no (not in the default actions) |
 | KAI | yes (pod groups) | binpack | skip what doesn't fit | queue quotas | over-quota | yes | within a queue |
+| default-binpack, kueue-binpack, volcano-binpack | as their base stack | binpack (configured to score GPUs) | as base | as base | as base | as base | as base |
+
+Why placement differs from what each project's docs suggest is explained, with sources, in
+[gpu-scoring.md](gpu-scoring.md). `random` and `most-pods` break ties with a seeded generator, so a single run is one
+draw; sweeps vary the seed.
 
 Victims of any preemption are the lowest-priority, most recently placed jobs, and nothing is evicted unless the
 evictions let the waiting job start. Training and fine-tunes resume from their last 30-minute checkpoint; inference
@@ -44,8 +49,10 @@ so pods of jobs submitted together interleave, and that's how half-placed gangs 
 
 - **`gsb sweep`** repeats the comparison over many seeded traces and reports mean, standard deviation and range per
   metric, plus how many seeds each stack was cheapest on. Quote these, not a single trace.
-- **`gsb ablate`** starts from the default scheduler and switches on one behaviour at a time (gang, bin-packing,
-  quotas, borrowing, reclaim), plus bin-packing alone. It attributes a stack's advantage to the behaviour behind it.
+- **`gsb ablate`** starts from the default scheduler (random placement) and switches on one behaviour at a time
+  (gang, bin-packing, quotas, borrowing, reclaim), plus bin-packing alone and GPU spreading alone. It attributes a
+  stack's advantage to the behaviour behind it. On the 256-GPU sample trace, spreading by GPUs is what costs time
+  (26.0 h against 19.9 h); random placement and bin-packing finish together.
 
 ## Limits
 
@@ -60,18 +67,27 @@ so pods of jobs submitted together interleave, and that's how half-placed gangs 
 
 ## How close is the model?
 
-The first real-scheduler runs ([results/cluster](../results/cluster/README.md); 12-job smoke trace, 32-GPU lab, kind +
-kwok) give a first answer, from one small trace:
+Real-scheduler runs of all seven stacks ([results/cluster](../results/cluster/README.md); 12-job smoke trace, 32-GPU
+lab, kind + kwok, CI run 38889757797) against the model over 100 placement seeds:
 
-| Stack | Time to finish: model | Real scheduler | Read |
+| Stack | Model, median (range) | Real scheduler | Read |
 |---|---|---|---|
-| default | 10.6 h | 9.4 h | within 11% |
-| KAI 0.18.5 | 6.9 h | 7.7 h | within 11% |
-| Kueue v0.20.1 | 9.5 h | 7.7 h | the real Kueue did better: admission by quota is not all-or-nothing placement, so it packs more (and strands some GPUs) |
-| Volcano v1.16.0 | 6.9 h | 12.8 h | the model is far off: Volcano's default config combines binpack with nodeorder's least-requested scoring, proportion queue caps and the overcommit admission gate, none of which the preset models |
+| default | 10.3 h (6.9-10.6) | 7.8 h | inside the model's range; one random draw on each side |
+| Kueue v0.20.1 | 9.1 h (6.9-9.5) | 7.3 h | inside the range |
+| Volcano v1.16.0 | 9.5 h (6.9-9.5) | 9.9 h | within 4% of the median: small pods stack on one H100 node and hold the training gang back |
+| KAI 0.18.5 | 6.9 h | 7.3 h | +6% |
+| default-, kueue-, volcano-binpack | 6.9 h | 7.3 h each | +6% |
 
-Use the simulation for reasoning about behaviours and for ranking within a family of choices; use cluster runs before
-deciding between real schedulers. Closing the Volcano gap needs larger traces, not a preset tuned to one 12-job run.
+Every stack that packs GPUs is 6% slower on the real control plane than in the model, consistently: that is
+scheduling and controller latency, which the model does not include. The stacks that place GPU pods without looking at
+GPUs vary from run to run, on the real scheduler as in the model, because their outcome depends on which nodes small
+pods happen to land on.
+
+Getting here took two harness fixes and a better Volcano model, each found by comparing placements rather than
+totals. The first runs disagreed by up to 84%. kwok's pod-create and pod-ready delays had idled every pod for 30 trace
+minutes ([cluster-runs.md](cluster-runs.md#how-a-run-is-checked)), and the Volcano preset assumed GPU bin-packing that
+Volcano's defaults don't do. Use the simulation to reason about behaviours and to rank configurations, and use
+cluster runs before choosing a scheduler.
 
 ## Cluster runs
 
