@@ -224,7 +224,8 @@ class PriorityPreemptionTests(unittest.TestCase):
                 Job("urgent", 120, "a", "inference", 1, 8, 10, 10, False)]
         r = simulate(one, jobs, Policy("p", priority_preemption="global"))
         self.assertEqual((r.records["urgent"].start, r.records["inf"].preemptions), (120, 1))
-        self.assertTrue(all(0 <= free <= 8 for _, _, frees, _ in r.samples for free in frees))
+        during_urgent = [frees for t, _, frees, _ in r.samples if t == 120]
+        self.assertEqual(during_urgent, [[0]])                        # all 8 GPUs busy, none counted twice
         self.assertEqual(r.records["inf"].replica_end[0], 100)        # the finished replica keeps its result
         self.assertEqual(r.records["inf"].end, 160)                   # resumes its last 30 s after urgent (120-130)
 
