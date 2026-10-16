@@ -49,10 +49,12 @@ jobs:
         run: |
           gsb cluster run --stack "$STACK" --fleet fleets/lab-32.yaml --trace traces/lab-32-smoke.jsonl \
             --speedup 300 --timeout 900 --strict -o "cluster-$STACK.json"
-          gsb simulate --stacks "$STACK" --fleet fleets/lab-32.yaml --trace traces/lab-32-smoke.jsonl -o "model-$STACK.json"
+          gsb simulate --stacks "$STACK" --fleet fleets/lab-32.yaml --trace traces/lab-32-smoke.jsonl --placements \
+            -o "model-$STACK.json"
           {
             echo "### $STACK on a kind + kwok cluster"; gsb report "cluster-$STACK.json"
             echo "### $STACK in the reference model"; gsb report "model-$STACK.json"
+            gsb timeline "cluster-$STACK.json" --stack "$STACK"; gsb timeline "model-$STACK.json" --stack "$STACK"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Evidence from the cluster
         if: always()
@@ -60,6 +62,19 @@ jobs:
           kubectl get pods -A -l gsb.io/job -o json | jq -r '.items[:6][] | [.metadata.name,
             (.metadata.annotations["pod-complete.stage.kwok.x-k8s.io/delay"] // "-"), .status.phase,
             (.status.startTime // "-"), ([.status.containerStatuses[]?.state.terminated.finishedAt] | first // "-")] | @tsv' || true
+      - name: Keep the raw evidence
+        if: always()
+        env:
+          STACK: ${{ matrix.stack }}
+        run: |
+          mkdir -p evidence
+          kubectl get pods -A -l gsb.io/job -o json > "evidence/pods-$STACK.json" || true
+          kubectl get events -A --sort-by=.lastTimestamp -o json > "evidence/events-$STACK.json" || true
+          for ns in kueue-system volcano-system kai-scheduler kube-system; do
+            for deploy in $(kubectl -n "$ns" get deploy -o name 2>/dev/null | grep -i -E 'sched|manager|controller'); do
+              kubectl -n "$ns" logs "$deploy" --tail=3000 > "evidence/$ns-${deploy#deployment.apps/}.log" 2>/dev/null || true
+            done
+          done
       - name: Diagnostics
         if: failure()
         run: |
@@ -73,4 +88,5 @@ jobs:
           path: |
             cluster-*.json
             model-*.json
+            evidence/
           if-no-files-found: ignore
