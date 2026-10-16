@@ -1,6 +1,7 @@
 # Everyday commands. Python 3.10+ with the package installed (pip install -e .).
 PY ?= python3
-STACK ?= kai          # default, kueue, volcano, kai, or a tuned variant: default-binpack, kueue-binpack, volcano-binpack
+# STACK: default, kueue, volcano, kai, or a tuned variant: default-binpack, kueue-binpack, volcano-binpack
+STACK ?= kai
 SPEEDUP ?= 300
 
 .PHONY: test results cluster clean

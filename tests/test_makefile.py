@@ -15,6 +15,12 @@ class MakefileTests(unittest.TestCase):
         committed = {f"results/{p.name}" for p in (ROOT / "results").iterdir() if p.is_file()}
         self.assertEqual(written, committed)
 
+    def test_no_trailing_comments_on_variables(self):
+        # make keeps the spaces before a trailing comment in the value: "kai   # x" makes install-kai   .sh
+        for line in (ROOT / "Makefile").read_text().splitlines():
+            if "?=" in line or (" = " in line and not line.startswith("\t")):
+                self.assertNotIn("#", line, line)
+
     def test_recipes_use_tabs(self):
         for line in (ROOT / "Makefile").read_text().splitlines():
             if line.startswith(" ") and line.strip():
