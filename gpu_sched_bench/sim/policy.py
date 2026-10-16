@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-PLACEMENTS = ("spread", "binpack", "random")
+PLACEMENTS = ("spread", "binpack", "random", "most-pods")
 QUEUES = ("best-effort", "strict")
 PRIORITY_PREEMPTION = ("none", "team", "global")
 
@@ -15,7 +15,10 @@ class Policy:
                                     # binpack: fewest free GPUs that still fit, keeping whole nodes free for big jobs;
                                     # random: any node that fits, chosen with a seeded generator. This is what a
                                     # scheduler does when its scoring ignores GPUs: every feasible node ties
-                                    # and the scheduler picks one of the tied nodes at random
+                                    # and the scheduler picks one of the tied nodes at random;
+                                    # most-pods: the node already running the most pods, ties at random. Volcano's
+                                    # default binpack packs the 100m cpu it charges a pod without requests, so it
+                                    # stacks pods by count whatever their GPU size
     queue: str = "best-effort"      # best-effort: a job that doesn't fit is skipped and later jobs may start;
                                     # strict: nothing behind the head of the queue starts until it does
     gang: bool = False              # all-or-nothing: a gang job's replicas are placed together or not at all

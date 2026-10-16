@@ -33,6 +33,7 @@ class NodeState:
     free: int
     price: float
     gpu_model: str = ""
+    pods: int = 0          # replicas placed here and not finished
 
 
 @dataclass
@@ -131,6 +132,9 @@ class Simulator:
             return min(fits, key=lambda n: (free[n.name] - need, n.name)).name
         if self.policy.placement == "random":      # every feasible node scores the same; pick one of them
             return self.rng.choice(sorted(n.name for n in fits))
+        if self.policy.placement == "most-pods":   # the busiest node by pod count, then one of the tied nodes
+            most = max(n.pods for n in fits)
+            return self.rng.choice(sorted(n.name for n in fits if n.pods == most))
         # spread: the node with the most free GPUs; ties broken by name for determinism
         return min(fits, key=lambda n: (-free[n.name], n.name)).name
 
@@ -155,6 +159,7 @@ class Simulator:
         rec.placed_at[i] = self.now
         self.usage[rec.job.team] = self.usage.get(rec.job.team, 0) + rec.job.gpus_per_replica
         self.by_name[node].free -= rec.job.gpus_per_replica
+        self.by_name[node].pods += 1
         if rec.job.gang:
             rec.held_since[i] = self.now
         else:
@@ -200,6 +205,7 @@ class Simulator:
                 continue                               # unplaced, or finished: settled when it finished
             gpus, price = rec.job.gpus_per_replica, self.by_name[node].price / 3600
             self.by_name[node].free += gpus
+            self.by_name[node].pods -= 1
             self.usage[rec.job.team] -= gpus
             rec.billed_before += (self.now - rec.placed_at[i]) * gpus * price
             if rec.replica_start[i] is None:
@@ -358,6 +364,7 @@ class Simulator:
                 else:
                     rec.replica_end[replica] = t
                     self.by_name[rec.nodes[replica]].free += rec.job.gpus_per_replica
+                    self.by_name[rec.nodes[replica]].pods -= 1
                     self.usage[rec.job.team] -= rec.job.gpus_per_replica
             self._schedule()
             if not self.events and self.pending:

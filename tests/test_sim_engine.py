@@ -37,6 +37,16 @@ class EngineTests(unittest.TestCase):
         big = simulate(fleet, [job("a", gpus=1), job("b", gpus=8)], Policy("r", placement="random"))
         self.assertNotEqual(big.records["a"].nodes[0], big.records["b"].nodes[0])   # only feasible nodes are drawn
 
+    def test_most_pods_stacks_small_pods_on_the_busiest_node_whatever_its_size(self):
+        mixed = parse({"name": "t", "pools": [{"name": "big", "count": 2, "gpus_per_node": 8},
+                                              {"name": "small", "count": 2, "gpus_per_node": 4}]})
+        jobs = [job(f"nb{i}", arrival=i, gpus=1, duration=1000, kind="notebook") for i in range(4)]
+        for seed in range(5):                                 # any node holds all four, so whatever the first pick
+            r = simulate(mixed, jobs, Policy("v", placement="most-pods", seed=seed))
+            self.assertEqual(len({r.records[f"nb{i}"].nodes[0] for i in range(4)}), 1)   # the rest follow it
+        tight = simulate(mixed, jobs, Policy("k", placement="binpack"))
+        self.assertTrue(all(tight.records[f"nb{i}"].nodes[0].startswith("small") for i in range(4)))
+
     def test_pod_by_pod_gangs_interleave_and_deadlock(self):
         # Submitted together, the pods interleave: g1-0 takes node A, g2-0 takes most of node B, and then
         # neither g1-1 (8 GPUs) nor g2-1 (6 GPUs) fits anywhere. Both gangs hold GPUs forever.
