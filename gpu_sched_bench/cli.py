@@ -39,6 +39,8 @@ def _parser() -> argparse.ArgumentParser:
     sim.add_argument("--stacks", default="default,kueue,volcano,kai", help="Comma-separated stacks (default: all).")
     sim.add_argument("--quotas", choices=("equal", "none"), default="equal",
                      help="Team quotas for stacks that support them: an equal share per team, or none (default: equal).")
+    sim.add_argument("--placements", action="store_true",
+                     help="Also record every replica's node and start/end time, as cluster runs do.")
     sim.add_argument("--output", "-o", help="Write results JSON here instead of stdout.")
     rp = sub.add_parser("report", help="Render one or more results JSON files as a Markdown comparison.")
     rp.add_argument("results", nargs="+", help="Results JSON files from gsb simulate.")
@@ -257,7 +259,8 @@ def _cmd_simulate(args: argparse.Namespace) -> int:
     except (FleetError, TraceError, OSError) as exc:
         print(f"gsb: {exc}", file=sys.stderr)
         return 2
-    text = results.dumps(results.run(fleet, jobs, stacks, args.quotas, trace_name=Path(args.trace).name))
+    text = results.dumps(results.run(fleet, jobs, stacks, args.quotas, trace_name=Path(args.trace).name,
+                                            with_placements=args.placements))
     if args.output:
         Path(args.output).write_text(text)
         print(f"gsb: wrote results for {', '.join(stacks)} to {args.output}", file=sys.stderr)

@@ -54,12 +54,16 @@ def document(fleet: Fleet, jobs: list[Job], shares: dict[str, float], trace_name
     }
 
 
-def run(fleet: Fleet, jobs: list[Job], stacks: list[str], quotas: str = "equal", trace_name: str = "") -> dict:
+def run(fleet: Fleet, jobs: list[Job], stacks: list[str], quotas: str = "equal", trace_name: str = "",
+        with_placements: bool = False) -> dict:
     shares = equal_quotas([j.team for j in jobs]) if quotas == "equal" else {}
     out = document(fleet, jobs, shares, trace_name, "simulation")
     for stack in stacks:
         policy = preset(stack, shares)
-        out["stacks"][stack] = summarize(simulate(fleet, jobs, policy), asdict(policy))
+        result = simulate(fleet, jobs, policy)
+        out["stacks"][stack] = summarize(result, asdict(policy))
+        if with_placements:
+            out["stacks"][stack]["placements"] = placements(result)
     return out
 
 

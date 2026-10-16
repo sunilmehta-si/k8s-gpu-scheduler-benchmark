@@ -30,6 +30,11 @@ class SimulateCliTests(unittest.TestCase):
             self.assertIn(key, kai)
         self.assertEqual(set(data["quotas"]), {"research", "product", "platform"})
 
+    def test_placements_are_opt_in(self):
+        self.assertNotIn("placements", json.loads(run()[1])["stacks"]["kai"])
+        rows = json.loads(run("--stacks", "kai", "--placements")[1])["stacks"]["kai"]["placements"]
+        self.assertTrue(rows and all(r["node"] for r in rows))      # every replica of the lab trace ran somewhere
+
     def test_deterministic(self):
         self.assertEqual(run()[1], run()[1])
 
