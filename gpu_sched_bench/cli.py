@@ -60,6 +60,9 @@ def _parser() -> argparse.ArgumentParser:
     cm = sub.add_parser("compare", help="Put a simulation next to a cluster run of the same stack and trace.")
     cm.add_argument("model", help="Results JSON from gsb simulate.")
     cm.add_argument("cluster", help="Results JSON from gsb cluster run.")
+    tl = sub.add_parser("timeline", help="List which job held which node and when, from a file with placements.")
+    tl.add_argument("results", help="Cluster results JSON, or gsb simulate --placements output.")
+    tl.add_argument("--stack", required=True, help="Stack to show.")
     ab = sub.add_parser("ablate", help="Switch behaviours on one at a time to see which one a gain comes from.")
     ab.add_argument("--fleet", required=True, help="Fleet YAML file.")
     ab.add_argument("--trace", required=True, help="Trace JSONL file.")
@@ -113,6 +116,18 @@ def _cmd_chart(args: argparse.Namespace) -> int:
     try:
         data = json.loads(Path(args.results).read_text())
         Path(args.output).write_text(svg(data, args.title))
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"gsb: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
+def _cmd_timeline(args: argparse.Namespace) -> int:
+    import json
+
+    from .timeline import timeline
+    try:
+        print(timeline(json.loads(Path(args.results).read_text()), args.stack), end="")
     except (OSError, ValueError, KeyError) as exc:
         print(f"gsb: {exc}", file=sys.stderr)
         return 2
@@ -337,6 +352,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_ablate(args)
     if args.command == "compare":
         return _cmd_compare(args)
+    if args.command == "timeline":
+        return _cmd_timeline(args)
     if args.command == "chart":
         return _cmd_chart(args)
     return 0
