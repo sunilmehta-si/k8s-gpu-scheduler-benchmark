@@ -49,8 +49,9 @@ def _parser() -> argparse.ArgumentParser:
     mf.add_argument("--stack", required=True, help="Scheduling stack, e.g. default.")
     mf.add_argument("--fleet", required=True, help="Fleet YAML file (quotas are sized from it).")
     mf.add_argument("--trace", required=True, help="Trace JSONL file.")
-    mf.add_argument("--part", choices=("all", "setup", "jobs"), default="all",
-                    help="setup: namespaces, priorities and queues; jobs: one Job per trace job (default: all).")
+    mf.add_argument("--part", choices=("all", "setup", "jobs", "scheduler"), default="all",
+                    help="setup: namespaces, priorities and queues; jobs: one Job per trace job; scheduler: the "
+                         "scheduler configuration a tuned variant installs (default: all).")
     mf.add_argument("--speedup", type=float, default=1.0, help="Divide job durations by this, e.g. 60 (default: 1).")
     mf.add_argument("--quotas", choices=("equal", "none"), default="equal", help="Team quotas (default: equal).")
     ch = sub.add_parser("chart", help="Draw an SVG bar chart of a results file (cost, time to finish, queue wait).")

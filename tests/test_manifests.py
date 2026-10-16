@@ -98,6 +98,20 @@ class VolcanoManifestTests(unittest.TestCase):
         self.assertEqual(nb["spec"]["minAvailable"], 1)                   # notebooks are not gangs
 
 
+    def test_binpack_variant_scores_gpus_and_otherwise_matches_volcano(self):
+        conf, = manifests.render("volcano-binpack", FLEET, JOBS, self.Q, part="scheduler")
+        self.assertEqual((conf["kind"], conf["metadata"]["namespace"]), ("ConfigMap", "volcano-system"))
+        tiers = yaml.safe_load(conf["data"]["volcano-scheduler.conf"])["tiers"]
+        binpack, = [p for t in tiers for p in t["plugins"] if p["name"] == "binpack"]
+        self.assertEqual(binpack["arguments"]["binpack.resources"], "nvidia.com/gpu")
+        plugins = [p["name"] for t in tiers for p in t["plugins"]]          # the default plugin list, unchanged
+        self.assertEqual(plugins, ["priority", "gang", "conformance", "overcommit", "drf", "predicates", "proportion",
+                                   "nodeorder", "binpack"])
+        self.assertEqual(manifests.render("volcano-binpack", FLEET, JOBS, self.Q),
+                         manifests.render("volcano", FLEET, JOBS, self.Q))
+        self.assertEqual(manifests.render("volcano", FLEET, JOBS, self.Q, part="scheduler"), [])
+
+
 class KaiManifestTests(unittest.TestCase):
     Q = {"research": 0.5, "product": 0.5}
 

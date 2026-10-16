@@ -184,9 +184,44 @@ def kai_workload(job: Job, speedup: float, quotas: dict[str, float] | None = Non
                      pod_labels={"kai.scheduler/queue": _kai_queue(job.team, quotas or {})})
 
 
+# Volcano v1.16's default scheduler configuration (installer/volcano-development.yaml), with binpack told to
+# score GPUs. By default binpack weighs only cpu and memory, so it gives every node the same score for a pod that
+# requests only GPUs. binpack.weight 10 makes GPU packing outweigh nodeorder's cpu/memory least-requested score.
+VOLCANO_BINPACK_CONF = """actions: "enqueue, allocate, backfill"
+tiers:
+- plugins:
+  - name: priority
+  - name: gang
+    enablePreemptable: false
+  - name: conformance
+- plugins:
+  - name: overcommit
+  - name: drf
+    enablePreemptable: false
+  - name: predicates
+  - name: proportion
+  - name: nodeorder
+  - name: binpack
+    arguments:
+      binpack.weight: 10
+      binpack.resources: nvidia.com/gpu
+      binpack.resources.nvidia.com/gpu: 1
+"""
+
+
+def volcano_binpack_scheduler(fleet: Fleet, jobs: list[Job], quotas: dict[str, float]) -> list[dict]:
+    """Replaces the installed scheduler's ConfigMap; restart volcano-scheduler afterwards (scripts do)."""
+    return [{"apiVersion": "v1", "kind": "ConfigMap",
+             "metadata": {"name": "volcano-scheduler-configmap", "namespace": "volcano-system"},
+             "data": {"volcano-scheduler.conf": VOLCANO_BINPACK_CONF}}]
+
+
 STACKS = {"default": (default_setup, default_workload), "kueue": (kueue_setup, kueue_workload),
-          "volcano": (volcano_setup, volcano_workload), "kai": (kai_setup, kai_workload)}
-QUOTA_AWARE_WORKLOADS = {"volcano", "kai"}   # workload renderers that need the quotas to pick a queue
+          "volcano": (volcano_setup, volcano_workload), "kai": (kai_setup, kai_workload),
+          "volcano-binpack": (volcano_setup, volcano_workload)}
+QUOTA_AWARE_WORKLOADS = {"volcano", "kai", "volcano-binpack"}   # workload renderers that need the quotas to pick a queue
+# Scheduler configuration that a tuned variant installs on top of the stack (gsb manifests --part scheduler).
+SCHEDULER_CONFIG = {"volcano-binpack": volcano_binpack_scheduler}
 
 
 def render(stack: str, fleet: Fleet, jobs: list[Job], quotas: dict[str, float], speedup: float = 1.0,
@@ -196,6 +231,8 @@ def render(stack: str, fleet: Fleet, jobs: list[Job], quotas: dict[str, float], 
     if speedup <= 0:
         raise ValueError("speedup must be > 0")
     setup_fn, workload_fn = STACKS[stack]
+    if part == "scheduler":
+        return SCHEDULER_CONFIG[stack](fleet, jobs, quotas) if stack in SCHEDULER_CONFIG else []
     docs = []
     if part in ("all", "setup"):
         docs += common_setup(jobs) + setup_fn(fleet, jobs, quotas)
