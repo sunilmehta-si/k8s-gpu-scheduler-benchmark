@@ -196,14 +196,14 @@ class Simulator:
     def _preempt(self, rec: JobRecord) -> None:
         """Evict a job: free its GPUs, keep checkpointed progress, lose the rest, and queue it again."""
         for i, node in enumerate(rec.nodes):
-            if node is None:
-                continue
+            if node is None or rec.replica_end[i] is not None:
+                continue                               # unplaced, or finished: settled when it finished
             gpus, price = rec.job.gpus_per_replica, self.by_name[node].price / 3600
             self.by_name[node].free += gpus
             self.usage[rec.job.team] -= gpus
             rec.billed_before += (self.now - rec.placed_at[i]) * gpus * price
-            if rec.replica_start[i] is None or rec.replica_end[i] is not None:
-                continue                               # it was only held (stranded), or had already finished
+            if rec.replica_start[i] is None:
+                continue                               # it was only held (stranded)
             elapsed = self.now - rec.replica_start[i]
             kept = (elapsed // CHECKPOINT_INTERVAL_S) * CHECKPOINT_INTERVAL_S \
                 if rec.job.kind in CHECKPOINTED_KINDS else elapsed

@@ -216,6 +216,18 @@ class PriorityPreemptionTests(unittest.TestCase):
         self.assertEqual(r.records["train"].preemptions, 1)        # team a's own lower-priority job
         self.assertEqual(r.records["train2"].preemptions, 0)
 
+    def test_evicting_a_partly_finished_job_frees_only_its_running_replicas(self):
+        one = parse({"name": "t", "pools": [{"name": "n", "count": 1, "gpus_per_node": 8}]})
+        # inf's first replica runs 0-100; its second waits for the blocker and runs from 50. At 120 the urgent
+        # job evicts inf, whose finished replica must not hand its 4 GPUs back a second time.
+        jobs = [job("blocker", gpus=4, duration=50), Job("inf", 0, "a", "inference", 2, 4, 100, 0, False),
+                Job("urgent", 120, "a", "inference", 1, 8, 10, 10, False)]
+        r = simulate(one, jobs, Policy("p", priority_preemption="global"))
+        self.assertEqual((r.records["urgent"].start, r.records["inf"].preemptions), (120, 1))
+        self.assertTrue(all(0 <= free <= 8 for _, _, frees, _ in r.samples for free in frees))
+        self.assertEqual(r.records["inf"].replica_end[0], 100)        # the finished replica keeps its result
+        self.assertEqual(r.records["inf"].end, 160)                   # resumes its last 30 s after urgent (120-130)
+
     def test_no_preemption_means_waiting(self):
         r = simulate(FLEET, self.jobs(), Policy("p"))
         self.assertEqual(r.records["urgent"].start, 1000)
