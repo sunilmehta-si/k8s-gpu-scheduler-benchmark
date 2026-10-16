@@ -14,7 +14,7 @@ class PresetTests(unittest.TestCase):
         d, k, v, kai = (preset(s, q) for s in STACKS)
         self.assertEqual((d.gang, d.placement, d.quotas), (False, "random", {}))
         self.assertEqual((k.gang, k.placement, k.borrowing, k.reclaim), (True, "random", True, True))
-        self.assertEqual((v.gang, v.placement, v.borrowing, v.reclaim), (True, "binpack", True, False))
+        self.assertEqual((v.gang, v.placement, v.borrowing, v.reclaim, v.enqueue_overcommit), (True, "random", True, False, 1.2))
         self.assertEqual((kai.gang, kai.placement, kai.reclaim), (True, "binpack", True))
 
     def test_without_teams_quota_features_are_off(self):

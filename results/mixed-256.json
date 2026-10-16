@@ -294,7 +294,7 @@
     "volcano": {
       "policy": {
         "name": "volcano",
-        "placement": "binpack",
+        "placement": "random",
         "queue": "best-effort",
         "gang": true,
         "quotas": {
@@ -306,7 +306,7 @@
         "reclaim": false,
         "priority_preemption": "none",
         "seed": 0,
-        "enqueue_overcommit": 0.0
+        "enqueue_overcommit": 1.2
       },
       "makespan_h": 19.93,
       "jobs": 131,
@@ -319,102 +319,102 @@
       "queue_wait": {
         "jobs": 131,
         "p50_min": 0.0,
-        "p95_min": 182.6,
-        "max_min": 408.7
+        "p95_min": 181.3,
+        "max_min": 636.9
       },
       "queue_wait_by_kind": {
         "finetune": {
           "jobs": 43,
-          "p50_min": 0.0,
-          "p95_min": 127.2,
-          "max_min": 182.6
+          "p50_min": 4.1,
+          "p95_min": 134.1,
+          "max_min": 142.9
         },
         "inference": {
           "jobs": 26,
           "p50_min": 0.0,
-          "p95_min": 0.0,
-          "max_min": 0.0
+          "p95_min": 10.3,
+          "max_min": 10.5
         },
         "notebook": {
           "jobs": 44,
           "p50_min": 0.0,
-          "p95_min": 0.0,
-          "max_min": 0.0
+          "p95_min": 20.5,
+          "max_min": 26.0
         },
         "training": {
           "jobs": 18,
-          "p50_min": 41.8,
-          "p95_min": 408.7,
-          "max_min": 408.7
+          "p50_min": 35.9,
+          "p95_min": 636.9,
+          "max_min": 636.9
         }
       },
       "fragmentation": {
-        "idle_while_waiting_gpu_h": 1032.2,
-        "stranded_by_size": 0.9387,
-        "scattered_free": 0.0162,
-        "partial_nodes": 0.037
+        "idle_while_waiting_gpu_h": 1424.3,
+        "stranded_by_size": 0.7246,
+        "scattered_free": 0.1241,
+        "partial_nodes": 0.1309
       },
       "fairness": {
-        "jain_service": 0.9988,
+        "jain_service": 0.9994,
         "jain_served_share": 1.0,
         "teams": {
           "platform": {
             "jobs": 34,
             "requested_gpu_h": 882.4,
-            "service": 0.9595,
+            "service": 0.8449,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
             "p50_min": 0.0,
-            "p95_min": 287.6,
-            "max_min": 389.5
+            "p95_min": 205.6,
+            "max_min": 636.9
           },
           "product": {
             "jobs": 51,
             "requested_gpu_h": 936.5,
-            "service": 0.9002,
+            "service": 0.8298,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
             "p50_min": 0.0,
-            "p95_min": 183.5,
-            "max_min": 408.7
+            "p95_min": 233.0,
+            "max_min": 532.8
           },
           "research": {
             "jobs": 46,
             "requested_gpu_h": 372.9,
-            "service": 0.9763,
+            "service": 0.8777,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
             "p50_min": 0.0,
-            "p95_min": 0.0,
-            "max_min": 195.3
+            "p95_min": 76.7,
+            "max_min": 231.4
           }
         }
       },
       "cost": {
         "total": 8546.08,
-        "idle": 3863.53,
+        "idle": 3673.83,
         "stranded": 0.0,
         "preempted_work": 0.0,
         "per_useful_gpu_h": 3.899,
         "by_team": {
-          "platform": 2010.19,
-          "product": 1938.43,
-          "research": 733.93
+          "platform": 2053.2,
+          "product": 2022.48,
+          "research": 796.56
         },
         "by_model": {
           "llama-70b": 1725.14,
           "vision-encoder": 1529.38,
           "mixtral-8x22b": 939.68,
-          "qwen-14b-lora": 103.25,
-          "chat-api": 89.74,
-          "llama-8b-lora": 78.29,
-          "rerank-api": 72.72,
-          "embedder": 71.87,
-          "embed-api": 52.7,
-          "notebook": 19.77
+          "qwen-14b-lora": 127.39,
+          "chat-api": 123.26,
+          "rerank-api": 118.58,
+          "embedder": 100.0,
+          "llama-8b-lora": 86.67,
+          "embed-api": 85.14,
+          "notebook": 37.0
         }
       }
     },
