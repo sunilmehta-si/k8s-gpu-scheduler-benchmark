@@ -52,11 +52,13 @@ and leaving it out caps every delay at kwok's 5-second default. The manifests se
 kwok's `stage-fast.yaml` release asset completes pods immediately; `scripts/cluster-up.sh` installs the
 `pod/general` stages instead, which read the delay annotations.
 
-The start-lag check exists because of the second bug, which the runtime check could not see. kwok's `pod-ready`
-stage waits 1 second plus up to 5 seconds of jitter before marking a pod running. Pods then ran exactly their
-expected time, so the runtime check passed, but every pod sat bound to its node for a median 30 trace minutes
-first, on every stack. That made all four real schedulers look slower than they are and hid how they differ. The
-recorded placements (`gsb timeline`) showed it. The manifests now set the pod-ready delay annotations to `0s`.
+The start-lag check exists because of the second bug, which the runtime check could not see. Before a pod runs,
+kwok's `pod-create` stage (pod IP, Initialized) and then its `pod-ready` stage each wait 1 second plus up to 5 seconds
+of jitter. Pods then ran exactly their expected time, so the runtime check passed, but every pod sat bound to its
+node for a median 30 trace minutes first, on every stack. That made all four real schedulers look slower than they
+are and hid how they differ. The recorded placements (`gsb timeline`) showed it. The first fix zeroed only the
+pod-ready delay; the start-lag check then failed six of seven stacks at a median 3 s, which pointed at pod-create.
+The manifests now set both stages' delay annotations to `0s`.
 
 ## In CI
 

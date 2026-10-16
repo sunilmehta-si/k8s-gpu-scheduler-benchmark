@@ -41,12 +41,13 @@ def pod_template(job: Job, speedup: float, scheduler: str | None = None, labels:
             # kwok picks a random delay between delay and jitter-delay, and uses jitter-delay outright when it is
             # not larger (lifecycle.go, Stage.Delay). Equal values give an exact delay; "0s" would mean no delay at
             # all, and leaving it out would cap every delay at kwok's 5 s default.
-            # pod-ready gets no delay: its default (1 s plus up to 5 s of jitter) held every placed pod's GPUs idle
-            # for 5-25 trace minutes at 300x, which made every real scheduler look slow.
+            # pod-create and pod-ready, the stages before a pod runs, get no delay: their defaults (1 s plus up to 5 s
+            # of jitter each) held every placed pod's GPUs idle for 5-25 trace minutes at 300x, which made every real
+            # scheduler look slow.
             "annotations": {"pod-complete.stage.kwok.x-k8s.io/delay": f"{delay}s",
                             "pod-complete.stage.kwok.x-k8s.io/jitter-delay": f"{delay}s",
-                            "pod-ready.stage.kwok.x-k8s.io/delay": "0s",
-                            "pod-ready.stage.kwok.x-k8s.io/jitter-delay": "0s"},
+                            **{f"{stage}.stage.kwok.x-k8s.io/{key}": "0s" for stage in ("pod-create", "pod-ready")
+                               for key in ("delay", "jitter-delay")}},
         },
         "spec": spec,
     }

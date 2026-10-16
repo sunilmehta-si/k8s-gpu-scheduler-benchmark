@@ -35,9 +35,11 @@ class CommonManifestTests(unittest.TestCase):
         self.assertEqual(pod["metadata"]["annotations"]["pod-complete.stage.kwok.x-k8s.io/delay"], "60s")  # 3600 s / 60
         # jitter-delay is kwok's upper bound, so it must equal the delay for pods to run exactly that long
         self.assertEqual(pod["metadata"]["annotations"]["pod-complete.stage.kwok.x-k8s.io/jitter-delay"], "60s")
-        # pods start the moment they are bound: kwok's default 1-6 s pod-ready delay would idle their GPUs
-        ready = {k: v for k, v in pod["metadata"]["annotations"].items() if k.startswith("pod-ready.")}
-        self.assertEqual(ready, {"pod-ready.stage.kwok.x-k8s.io/delay": "0s", "pod-ready.stage.kwok.x-k8s.io/jitter-delay": "0s"})
+        # pods start the moment they are bound: kwok's default 1-6 s pod-create and pod-ready delays idle their GPUs
+        before = {k: v for k, v in pod["metadata"]["annotations"].items() if k.startswith(("pod-create.", "pod-ready."))}
+        self.assertEqual(sorted(before), sorted(f"{s}.stage.kwok.x-k8s.io/{k}" for s in ("pod-create", "pod-ready")
+                                                for k in ("delay", "jitter-delay")))
+        self.assertEqual(set(before.values()), {"0s"})
         self.assertEqual(pod["spec"]["containers"][0]["resources"]["limits"], {"nvidia.com/gpu": "8"})
         self.assertEqual(pod["spec"]["nodeSelector"], {"type": "kwok"})
         self.assertNotIn("schedulerName", pod["spec"])                      # the default scheduler
