@@ -8,6 +8,9 @@
   the tests like the other two fleets. At that scale every stack finishes the trace at the same cost per useful
   GPU-hour; they differ in queue wait, stranded GPU-hours and fragmentation.
 
+### Changed
+- The cluster workflow installs KAI Scheduler 0.18.6 (was 0.18.5).
+
 [Unreleased]: https://github.com/sunilmehta-si/k8s-gpu-scheduler-benchmark/compare/v0.3.0...HEAD
 
 ## [0.3.0] - 2026-10-16
