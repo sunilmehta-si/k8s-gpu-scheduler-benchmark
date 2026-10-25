@@ -1,0 +1,27 @@
+# A 1,024-GPU data-centre fleet: the mixed-256 shape scaled four times, so results between the two
+# show what changes with scale rather than with node mix. Half the GPUs are in 8-GPU training nodes,
+# a quarter in 4-GPU nodes for fine-tuning and inference, a quarter in 2-GPU nodes for notebooks.
+# Prices are illustrative on-demand rates in USD; set your own to get real cost numbers.
+name: dc-1024
+pools:
+  - name: h100
+    count: 64
+    gpus_per_node: 8
+    gpu_model: NVIDIA-H100-80GB-HBM3
+    price_per_gpu_hour: 2.50
+    labels:
+      gsb.io/tier: training
+  - name: l40s
+    count: 64
+    gpus_per_node: 4
+    gpu_model: NVIDIA-L40S
+    price_per_gpu_hour: 1.00
+    labels:
+      gsb.io/tier: inference
+  - name: l4
+    count: 128
+    gpus_per_node: 2
+    gpu_model: NVIDIA-L4
+    price_per_gpu_hour: 0.70
+    labels:
+      gsb.io/tier: interactive

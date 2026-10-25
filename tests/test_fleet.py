@@ -37,4 +37,4 @@ class SampleFleetTests(unittest.TestCase):
         from gpu_sched_bench.fleet import load
         root = Path(__file__).resolve().parents[1] / "fleets"
         totals = {p.stem: load(p).total_gpus for p in sorted(root.glob("*.yaml"))}
-        self.assertEqual(totals, {"lab-32": 32, "mixed-256": 256})
+        self.assertEqual(totals, {"dc-1024": 1024, "lab-32": 32, "mixed-256": 256})

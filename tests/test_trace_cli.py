@@ -8,6 +8,7 @@ from gpu_sched_bench.cli import main
 ROOT = Path(__file__).resolve().parents[1]
 SAMPLES = {"lab-32-8h.jsonl": ["--fleet", "fleets/lab-32.yaml", "--hours", "8", "--rate", "2.5", "--seed", "7"],
            "mixed-256-8h.jsonl": ["--fleet", "fleets/mixed-256.yaml", "--hours", "8", "--rate", "16", "--seed", "7"],
+           "dc-1024-8h.jsonl": ["--fleet", "fleets/dc-1024.yaml", "--hours", "8", "--rate", "72", "--seed", "7"],
            "lab-32-smoke.jsonl": ["--fleet", "fleets/lab-32.yaml", "--hours", "1", "--rate", "10", "--seed", "13"]}
 
 
