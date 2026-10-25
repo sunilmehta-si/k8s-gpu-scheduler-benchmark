@@ -10,6 +10,7 @@
 
 ### Changed
 - The cluster workflow installs KAI Scheduler 0.18.6 (was 0.18.5).
+- The cluster workflow installs Kueue v0.20.3 (was v0.20.1).
 
 [Unreleased]: https://github.com/sunilmehta-si/k8s-gpu-scheduler-benchmark/compare/v0.3.0...HEAD
 
