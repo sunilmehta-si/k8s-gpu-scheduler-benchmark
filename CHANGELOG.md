@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.4.0] - 2026-10-25
 
 ### Added
 - A 1,024-GPU data-centre fleet (`fleets/dc-1024.yaml`: the mixed-256 node mix at four times the size), a 611-job
@@ -12,7 +12,7 @@
 - The cluster workflow installs KAI Scheduler 0.18.6 (was 0.18.5).
 - The cluster workflow installs Kueue v0.20.3 (was v0.20.1).
 
-[Unreleased]: https://github.com/sunilmehta-si/k8s-gpu-scheduler-benchmark/compare/v0.3.0...HEAD
+[0.4.0]: https://github.com/sunilmehta-si/k8s-gpu-scheduler-benchmark/compare/v0.3.0...v0.4.0
 
 ## [0.3.0] - 2026-10-16
 
