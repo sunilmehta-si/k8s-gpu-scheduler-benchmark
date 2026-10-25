@@ -77,3 +77,43 @@
 | platform | $31 | $31 | $31 | $34 |
 | product | $162 | $163 | $137 | $162 |
 | research | $319 | $312 | $311 | $312 |
+
+## dc-1024: 1024 GPUs on 256 nodes, 611 jobs (8,810 GPU-hours requested)
+
+> Reference simulation of each stack's documented default behaviour, not a run of the schedulers themselves. See [the methodology](../docs/methodology.md).
+
+| Metric | default | kueue | volcano | kai |
+|---|---|---|---|---|
+| Jobs finished <sub>higher is better</sub> | 611/611 | 611/611 | 611/611 | 611/611 |
+| Deadlocked <sub>lower is better</sub> | no | no | no | no |
+| Makespan (h) <sub>lower is better</sub> | 23.5 | 23.5 | 23.5 | 23.5 |
+| GPU utilisation <sub>higher is better</sub> | **37.2%** | 36.7% | 36.7% | 36.7% |
+| Useful utilisation <sub>higher is better</sub> | 36.7% | 36.7% | 36.7% | **36.7%** |
+| Queue wait p50 (min) <sub>lower is better</sub> | 0.0 | 0.0 | 0.0 | 0.0 |
+| Queue wait p95 (min) <sub>lower is better</sub> | 168.4 | 123.7 | 183.5 | **88.1** |
+| Training wait p95 (min) <sub>lower is better</sub> | 204.0 | 173.7 | 232.5 | **164.9** |
+| Notebook wait p95 (min) <sub>lower is better</sub> | **0.0** | **0.0** | 0.7 | **0.0** |
+| Stranded GPU-hours <sub>lower is better</sub> | 129.7 | **0.0** | **0.0** | **0.0** |
+| Preempted work (GPU-h) <sub>lower is better</sub> | **0.0** | 1.6 | **0.0** | 5.7 |
+| GPU-h idle while work waited <sub>lower is better</sub> | 3,277.4 | 3,844.0 | 4,850.3 | **3,252.7** |
+| Idle GPUs too small for waiting work <sub>lower is better</sub> | 100.0% | 98.5% | **92.7%** | 98.0% |
+| Partly used nodes (fragmentation) <sub>lower is better</sub> | 11.8% | 12.2% | 3.3% | **1.9%** |
+| Fairness between teams (Jain) <sub>higher is better</sub> | 1.000 | 1.000 | 1.000 | 1.000 |
+| Fleet cost until the last job finished <sub>lower is better</sub> | $40,246 | $40,246 | $40,246 | $40,246 |
+| Cost per useful GPU-hour <sub>lower is better</sub> | $4.57 | $4.57 | $4.57 | $4.57 |
+
+**Queue wait p95 by team (min)**
+
+| Team | default | kueue | volcano | kai |
+|---|---|---|---|---|
+| platform | 166.5 | 136.1 | 184.2 | 102.2 |
+| product | 166.7 | 125.8 | 181.9 | 86.0 |
+| research | 169.5 | 78.2 | 162.4 | 77.9 |
+
+**GPU cost by team**
+
+| Team | default | kueue | volcano | kai |
+|---|---|---|---|---|
+| platform | $6,520 | $6,438 | $6,706 | $6,336 |
+| product | $5,875 | $5,785 | $6,130 | $5,642 |
+| research | $6,039 | $6,020 | $6,363 | $5,841 |

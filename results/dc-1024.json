@@ -1,0 +1,549 @@
+{
+  "schema_version": 1,
+  "tool_version": "0.3.0",
+  "mode": "simulation",
+  "fleet": {
+    "name": "dc-1024",
+    "nodes": 256,
+    "gpus": 1024,
+    "pools": [
+      {
+        "name": "h100",
+        "nodes": 64,
+        "gpus_per_node": 8,
+        "gpu_model": "NVIDIA-H100-80GB-HBM3",
+        "price_per_gpu_hour": 2.5
+      },
+      {
+        "name": "l40s",
+        "nodes": 64,
+        "gpus_per_node": 4,
+        "gpu_model": "NVIDIA-L40S",
+        "price_per_gpu_hour": 1.0
+      },
+      {
+        "name": "l4",
+        "nodes": 128,
+        "gpus_per_node": 2,
+        "gpu_model": "NVIDIA-L4",
+        "price_per_gpu_hour": 0.7
+      }
+    ]
+  },
+  "trace": {
+    "name": "dc-1024-8h.jsonl",
+    "jobs": 611,
+    "requested_gpu_h": 8810.1
+  },
+  "quotas": {
+    "platform": 0.3333333333333333,
+    "product": 0.3333333333333333,
+    "research": 0.3333333333333333
+  },
+  "stacks": {
+    "default": {
+      "policy": {
+        "name": "default",
+        "placement": "random",
+        "queue": "best-effort",
+        "gang": false,
+        "quotas": {},
+        "borrowing": false,
+        "reclaim": false,
+        "priority_preemption": "global",
+        "seed": 0,
+        "enqueue_overcommit": 0.0
+      },
+      "makespan_h": 23.46,
+      "jobs": 611,
+      "jobs_finished": 611,
+      "deadlocked": false,
+      "utilisation": 0.3721,
+      "useful_utilisation": 0.3667,
+      "stranded_gpu_h": 129.7,
+      "preempted_gpu_h": 0.0,
+      "queue_wait": {
+        "jobs": 611,
+        "p50_min": 0.0,
+        "p95_min": 168.4,
+        "max_min": 215.7
+      },
+      "queue_wait_by_kind": {
+        "finetune": {
+          "jobs": 166,
+          "p50_min": 0.0,
+          "p95_min": 171.6,
+          "max_min": 209.6
+        },
+        "inference": {
+          "jobs": 122,
+          "p50_min": 0.0,
+          "p95_min": 0.0,
+          "max_min": 0.0
+        },
+        "notebook": {
+          "jobs": 238,
+          "p50_min": 0.0,
+          "p95_min": 0.0,
+          "max_min": 0.0
+        },
+        "training": {
+          "jobs": 85,
+          "p50_min": 99.8,
+          "p95_min": 204.0,
+          "max_min": 215.7
+        }
+      },
+      "fragmentation": {
+        "idle_while_waiting_gpu_h": 3277.4,
+        "stranded_by_size": 1.0,
+        "scattered_free": 0.0794,
+        "partial_nodes": 0.1184
+      },
+      "fairness": {
+        "jain_service": 0.9999,
+        "jain_served_share": 1.0,
+        "teams": {
+          "platform": {
+            "jobs": 168,
+            "requested_gpu_h": 2963.6,
+            "service": 0.9129,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 166.5,
+            "max_min": 215.7
+          },
+          "product": {
+            "jobs": 207,
+            "requested_gpu_h": 2782.9,
+            "service": 0.9017,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 166.7,
+            "max_min": 209.6
+          },
+          "research": {
+            "jobs": 236,
+            "requested_gpu_h": 3063.6,
+            "service": 0.9229,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 169.5,
+            "max_min": 212.1
+          }
+        }
+      },
+      "cost": {
+        "total": 40246.41,
+        "idle": 21811.41,
+        "stranded": 324.3,
+        "preempted_work": 0.0,
+        "per_useful_gpu_h": 4.568,
+        "by_team": {
+          "platform": 6520.28,
+          "product": 5875.48,
+          "research": 6039.23
+        },
+        "by_model": {
+          "llama-70b": 6407.0,
+          "mixtral-8x22b": 5277.56,
+          "vision-encoder": 3943.73,
+          "embed-api": 541.69,
+          "chat-api": 508.63,
+          "qwen-14b-lora": 506.68,
+          "rerank-api": 483.96,
+          "embedder": 338.75,
+          "llama-8b-lora": 298.08,
+          "notebook": 128.91
+        }
+      }
+    },
+    "kueue": {
+      "policy": {
+        "name": "kueue",
+        "placement": "random",
+        "queue": "best-effort",
+        "gang": true,
+        "quotas": {
+          "platform": 0.3333333333333333,
+          "product": 0.3333333333333333,
+          "research": 0.3333333333333333
+        },
+        "borrowing": true,
+        "reclaim": true,
+        "priority_preemption": "team",
+        "seed": 0,
+        "enqueue_overcommit": 0.0
+      },
+      "makespan_h": 23.46,
+      "jobs": 611,
+      "jobs_finished": 611,
+      "deadlocked": false,
+      "utilisation": 0.3667,
+      "useful_utilisation": 0.3667,
+      "stranded_gpu_h": 0.0,
+      "preempted_gpu_h": 1.6,
+      "queue_wait": {
+        "jobs": 611,
+        "p50_min": 0.0,
+        "p95_min": 123.7,
+        "max_min": 362.7
+      },
+      "queue_wait_by_kind": {
+        "finetune": {
+          "jobs": 166,
+          "p50_min": 0.0,
+          "p95_min": 30.9,
+          "max_min": 155.4
+        },
+        "inference": {
+          "jobs": 122,
+          "p50_min": 0.0,
+          "p95_min": 0.0,
+          "max_min": 0.0
+        },
+        "notebook": {
+          "jobs": 238,
+          "p50_min": 0.0,
+          "p95_min": 0.0,
+          "max_min": 0.0
+        },
+        "training": {
+          "jobs": 85,
+          "p50_min": 77.0,
+          "p95_min": 173.7,
+          "max_min": 362.7
+        }
+      },
+      "fragmentation": {
+        "idle_while_waiting_gpu_h": 3844.0,
+        "stranded_by_size": 0.9847,
+        "scattered_free": 0.0897,
+        "partial_nodes": 0.1221
+      },
+      "fairness": {
+        "jain_service": 0.9999,
+        "jain_served_share": 1.0,
+        "teams": {
+          "platform": {
+            "jobs": 168,
+            "requested_gpu_h": 2963.6,
+            "service": 0.9401,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 3,
+            "p50_min": 0.0,
+            "p95_min": 136.1,
+            "max_min": 218.1
+          },
+          "product": {
+            "jobs": 207,
+            "requested_gpu_h": 2782.9,
+            "service": 0.9313,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 125.8,
+            "max_min": 360.6
+          },
+          "research": {
+            "jobs": 236,
+            "requested_gpu_h": 3063.6,
+            "service": 0.9554,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 78.2,
+            "max_min": 362.7
+          }
+        }
+      },
+      "cost": {
+        "total": 40246.41,
+        "idle": 22004.34,
+        "stranded": 0.0,
+        "preempted_work": 3.85,
+        "per_useful_gpu_h": 4.568,
+        "by_team": {
+          "platform": 6437.67,
+          "product": 5784.85,
+          "research": 6019.54
+        },
+        "by_model": {
+          "llama-70b": 6298.7,
+          "mixtral-8x22b": 5150.53,
+          "vision-encoder": 3861.79,
+          "chat-api": 568.83,
+          "embed-api": 564.44,
+          "qwen-14b-lora": 512.2,
+          "rerank-api": 488.3,
+          "embedder": 344.89,
+          "llama-8b-lora": 316.04,
+          "notebook": 136.34
+        }
+      }
+    },
+    "volcano": {
+      "policy": {
+        "name": "volcano",
+        "placement": "most-pods",
+        "queue": "best-effort",
+        "gang": true,
+        "quotas": {
+          "platform": 0.3333333333333333,
+          "product": 0.3333333333333333,
+          "research": 0.3333333333333333
+        },
+        "borrowing": true,
+        "reclaim": false,
+        "priority_preemption": "none",
+        "seed": 0,
+        "enqueue_overcommit": 1.2
+      },
+      "makespan_h": 23.46,
+      "jobs": 611,
+      "jobs_finished": 611,
+      "deadlocked": false,
+      "utilisation": 0.3667,
+      "useful_utilisation": 0.3667,
+      "stranded_gpu_h": 0.0,
+      "preempted_gpu_h": 0.0,
+      "queue_wait": {
+        "jobs": 611,
+        "p50_min": 0.0,
+        "p95_min": 183.5,
+        "max_min": 429.6
+      },
+      "queue_wait_by_kind": {
+        "finetune": {
+          "jobs": 166,
+          "p50_min": 0.0,
+          "p95_min": 39.3,
+          "max_min": 194.9
+        },
+        "inference": {
+          "jobs": 122,
+          "p50_min": 0.0,
+          "p95_min": 2.0,
+          "max_min": 4.2
+        },
+        "notebook": {
+          "jobs": 238,
+          "p50_min": 0.0,
+          "p95_min": 0.7,
+          "max_min": 6.1
+        },
+        "training": {
+          "jobs": 85,
+          "p50_min": 109.3,
+          "p95_min": 232.5,
+          "max_min": 429.6
+        }
+      },
+      "fragmentation": {
+        "idle_while_waiting_gpu_h": 4850.3,
+        "stranded_by_size": 0.9274,
+        "scattered_free": 0.0331,
+        "partial_nodes": 0.0326
+      },
+      "fairness": {
+        "jain_service": 0.9999,
+        "jain_served_share": 1.0,
+        "teams": {
+          "platform": {
+            "jobs": 168,
+            "requested_gpu_h": 2963.6,
+            "service": 0.9254,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 184.2,
+            "max_min": 237.5
+          },
+          "product": {
+            "jobs": 207,
+            "requested_gpu_h": 2782.9,
+            "service": 0.911,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 181.9,
+            "max_min": 429.6
+          },
+          "research": {
+            "jobs": 236,
+            "requested_gpu_h": 3063.6,
+            "service": 0.9367,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 162.4,
+            "max_min": 409.6
+          }
+        }
+      },
+      "cost": {
+        "total": 40246.41,
+        "idle": 21047.54,
+        "stranded": 0.0,
+        "preempted_work": 0.0,
+        "per_useful_gpu_h": 4.568,
+        "by_team": {
+          "platform": 6705.9,
+          "product": 6129.52,
+          "research": 6363.44
+        },
+        "by_model": {
+          "llama-70b": 6298.7,
+          "mixtral-8x22b": 5146.76,
+          "vision-encoder": 3861.79,
+          "chat-api": 871.73,
+          "embed-api": 779.29,
+          "rerank-api": 671.6,
+          "qwen-14b-lora": 553.19,
+          "embedder": 397.23,
+          "llama-8b-lora": 309.93,
+          "notebook": 308.65
+        }
+      }
+    },
+    "kai": {
+      "policy": {
+        "name": "kai",
+        "placement": "binpack",
+        "queue": "best-effort",
+        "gang": true,
+        "quotas": {
+          "platform": 0.3333333333333333,
+          "product": 0.3333333333333333,
+          "research": 0.3333333333333333
+        },
+        "borrowing": true,
+        "reclaim": true,
+        "priority_preemption": "team",
+        "seed": 0,
+        "enqueue_overcommit": 0.0
+      },
+      "makespan_h": 23.46,
+      "jobs": 611,
+      "jobs_finished": 611,
+      "deadlocked": false,
+      "utilisation": 0.3669,
+      "useful_utilisation": 0.3669,
+      "stranded_gpu_h": 0.0,
+      "preempted_gpu_h": 5.7,
+      "queue_wait": {
+        "jobs": 611,
+        "p50_min": 0.0,
+        "p95_min": 88.1,
+        "max_min": 322.5
+      },
+      "queue_wait_by_kind": {
+        "finetune": {
+          "jobs": 166,
+          "p50_min": 0.0,
+          "p95_min": 33.2,
+          "max_min": 96.6
+        },
+        "inference": {
+          "jobs": 122,
+          "p50_min": 0.0,
+          "p95_min": 0.0,
+          "max_min": 0.0
+        },
+        "notebook": {
+          "jobs": 238,
+          "p50_min": 0.0,
+          "p95_min": 0.0,
+          "max_min": 0.0
+        },
+        "training": {
+          "jobs": 85,
+          "p50_min": 65.0,
+          "p95_min": 164.9,
+          "max_min": 322.5
+        }
+      },
+      "fragmentation": {
+        "idle_while_waiting_gpu_h": 3252.7,
+        "stranded_by_size": 0.9797,
+        "scattered_free": 0.0075,
+        "partial_nodes": 0.0191
+      },
+      "fairness": {
+        "jain_service": 0.9999,
+        "jain_served_share": 1.0,
+        "teams": {
+          "platform": {
+            "jobs": 168,
+            "requested_gpu_h": 2963.6,
+            "service": 0.944,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 2,
+            "p50_min": 0.0,
+            "p95_min": 102.2,
+            "max_min": 218.1
+          },
+          "product": {
+            "jobs": 207,
+            "requested_gpu_h": 2782.9,
+            "service": 0.9474,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 86.0,
+            "max_min": 322.5
+          },
+          "research": {
+            "jobs": 236,
+            "requested_gpu_h": 3063.6,
+            "service": 0.9624,
+            "served_share": 1.0,
+            "never_started": 0,
+            "preemptions": 0,
+            "p50_min": 0.0,
+            "p95_min": 77.9,
+            "max_min": 322.0
+          }
+        }
+      },
+      "cost": {
+        "total": 40246.41,
+        "idle": 22426.87,
+        "stranded": 0.0,
+        "preempted_work": 14.23,
+        "per_useful_gpu_h": 4.568,
+        "by_team": {
+          "platform": 6336.28,
+          "product": 5642.18,
+          "research": 5841.07
+        },
+        "by_model": {
+          "llama-70b": 6312.86,
+          "mixtral-8x22b": 5146.76,
+          "vision-encoder": 3861.79,
+          "qwen-14b-lora": 491.1,
+          "embed-api": 451.97,
+          "chat-api": 445.0,
+          "rerank-api": 387.67,
+          "embedder": 331.18,
+          "llama-8b-lora": 280.27,
+          "notebook": 110.93
+        }
+      }
+    }
+  }
+}

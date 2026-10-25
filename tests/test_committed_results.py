@@ -10,7 +10,7 @@ from gpu_sched_bench.report import to_markdown
 from gpu_sched_bench.trace import load as load_trace
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNS = ["mixed-256", "lab-32"]
+RUNS = ["mixed-256", "lab-32", "dc-1024"]
 
 
 class CommittedResultsTests(unittest.TestCase):
@@ -47,7 +47,8 @@ class CommittedSweepAndChartTests(unittest.TestCase):
 
     def test_charts_match_results(self):
         from gpu_sched_bench.chart import svg
-        titles = {"mixed-256": "256-GPU fleet, 131 jobs (reference simulation)", "lab-32": "32-GPU lab, 26 jobs (reference simulation)"}
+        titles = {"mixed-256": "256-GPU fleet, 131 jobs (reference simulation)", "lab-32": "32-GPU lab, 26 jobs (reference simulation)",
+                  "dc-1024": "1,024-GPU data centre, 611 jobs (reference simulation)"}
         for name, title in titles.items():
             data = json.loads((ROOT / f"results/{name}.json").read_text())
             self.assertEqual((ROOT / f"results/{name}.svg").read_text(), svg(data, title), f"results/{name}.svg is stale")
