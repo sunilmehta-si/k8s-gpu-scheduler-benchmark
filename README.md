@@ -46,15 +46,20 @@ At fleet scale, in simulation (256 GPUs, 131 jobs per trace, [ten traces](result
 saving is smaller but holds for every stack: GPU bin-packing lowers the mean cost per useful GPU-hour from $5.31 to
 $5.21 for the default scheduler, $5.11 to $4.92 for Kueue and $5.12 to $4.92 for Volcano, which matches KAI's $4.92.
 
-Two more things the numbers say:
+Three more things the numbers say:
 
 - **Spreading GPU pods is what really hurts.** [`gsb ablate`](#quick-start) switches behaviours on one at a time. On the
   256-GPU sample trace, placing pods on the node with the most free GPUs takes 26.0 h; random placement and
   bin-packing both finish in 19.9 h. A scheduler that ignores GPUs is a lottery; one that spreads them is a loss.
 - **Preemption protects interactive work, at a price.** On the 32-GPU lab ([full results](results/README.md)),
   every stack that preempts by priority keeps notebook waits at 0 min p95; Volcano's default doesn't preempt, and
-  notebooks wait 31 min. KAI's reclaim cost 72 GPU-hours of training progress on the big fleet, even with 30-minute
-  checkpoints.
+  notebooks wait 31 min. KAI's reclaim cost 72 GPU-hours of training progress on the 256-GPU fleet, even with
+  30-minute checkpoints.
+- **At data-centre scale the stacks separate on waiting, not cost.** On the 1,024-GPU fleet (256 nodes, 611 jobs,
+  [results](results/README.md)), every stack finishes in 23.5 h at $4.57 per useful GPU-hour. What differs is
+  queue wait p95 (88 min with KAI, 124 with Kueue, 168 with the default scheduler, 184 with Volcano), the 130
+  GPU-hours the default scheduler strands in half-placed gangs, and fragmentation: 1.9% of nodes partly used
+  with KAI against 12% with the default scheduler and Kueue.
 
 ## Checked against the real schedulers
 
@@ -125,7 +130,7 @@ and models no hardware effects. Every modelling choice and its source is in [doc
 | Fleets, traces, generator, GPU-model requirements | Done, tested |
 | Reference simulator, seven presets (four stacks as installed, three tuned), metrics, reports, charts, sweeps, load curves, ablation | Done, tested; committed results reproduced in CI |
 | Real-scheduler runs on kind + kwok for all seven, with runtime and start-lag checks and per-pod placements | Done, in CI on every push |
-| Larger cluster traces | Next |
+| Larger fleets: a 1,024-GPU data centre with a 611-job trace, next to the 256-GPU and 32-GPU fleets | Done, tested; committed results reproduced in CI |
 | NVIDIA Run:ai full platform, DRA, topology-aware placement | Planned |
 
 Contributions welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
