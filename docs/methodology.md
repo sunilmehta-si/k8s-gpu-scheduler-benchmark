@@ -64,6 +64,9 @@ so pods of jobs submitted together interleave, and that's how half-placed gangs 
   in the same JSONL format can be dropped in.
 - **Seeds matter.** On the 256-GPU fleet the cheapest stack changes between seeds (see the committed sweep), so a
   single trace is an example, not a verdict. Use `gsb sweep`.
+- **Checked at one scale.** The comparison with the real schedulers below uses the 32-GPU lab. The 256-GPU and
+  1,024-GPU results are simulation only; the stacks' relative order there follows from the same modelled
+  behaviours, but has not been measured on a cluster.
 
 ## How close is the model?
 

@@ -72,5 +72,7 @@ Volcano v1.16.0, KAI Scheduler 0.18.5; the GPU bin-packing kube-scheduler matche
 ## Known gaps
 
 - Preemptions are not reconstructed from final pod state, so cluster runs report preempted work as 0.
-- The smoke trace is small (12 jobs) to keep CI fast. Larger traces work the same way; they just take longer.
+- The smoke trace is small (12 jobs) to keep CI fast. The 8-hour sample traces (26, 131 and 611 jobs on the 32-, 256-
+  and 1,024-GPU fleets) have only been simulated so far. Cluster runs of them work the same way: one kwok node per
+  fleet node, and wall time of the trace's makespan divided by the speedup.
 - The NVIDIA Run:ai full platform and DRA-based GPU allocation are not covered yet.
