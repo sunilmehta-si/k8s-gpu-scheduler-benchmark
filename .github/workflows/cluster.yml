@@ -33,10 +33,15 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -e .
+      - name: Pins from cluster/versions.env
+        run: grep -E '^[A-Z_]+=' cluster/versions.env >> "$GITHUB_ENV"
       - uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
         with:
           cluster_name: gsb
           config: cluster/kind.yaml
+          # Without these the action's defaults decide the kind release and Kubernetes version.
+          version: ${{ env.KIND_VERSION }}
+          node_image: ${{ env.KIND_NODE_IMAGE }}
       - name: Install kwok
         run: |
           scripts/cluster-up.sh
