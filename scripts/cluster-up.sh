@@ -3,9 +3,9 @@
 #   node/fast + node/heartbeat-with-lease  -> fake nodes become Ready and stay Ready
 #   pod/general                            -> pods become Ready, then complete after the
 #                                             pod-complete.stage.kwok.x-k8s.io/delay annotation
-# Usage: scripts/cluster-up.sh        (KWOK_VERSION and CLUSTER can be overridden)
+# Usage: scripts/cluster-up.sh        (CLUSTER, and any pin in cluster/versions.env, can be overridden)
 set -euo pipefail
-KWOK_VERSION="${KWOK_VERSION:-v0.8.0}"
+. "$(dirname "$0")/lib.sh"
 CLUSTER="${CLUSTER:-gsb}"
 cd "$(dirname "$0")/.."
 
