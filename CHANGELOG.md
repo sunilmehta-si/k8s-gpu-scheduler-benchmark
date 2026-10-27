@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- Every cluster component is pinned in `cluster/versions.env`: kind, the Kubernetes node image by digest, kwok and
+  the three schedulers. The install scripts read it, and a variable set in the environment still wins.
+- The cluster workflow gives kind-action the pinned kind release and node image. Before, the action's own defaults
+  chose the Kubernetes version, so upgrading the action could have changed the cluster under the results.
+
 ## [0.4.0] - 2026-10-25
 
 ### Added
