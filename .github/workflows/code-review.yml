@@ -1,0 +1,29 @@
+name: code-review
+
+# Reviews every pull request with agentic-code-review-tool: the changed lines of the simulator, the scheduler
+# manifests and install scripts, and the workflows, as a PR review with inline comments and as diff annotations. The
+# AI step is off, so no model key is needed. Pull requests from forks get a read-only token: annotations only.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: sunilmehta-si/agentic-code-review-tool@6c213386140ed9ea11b97f6fe9f1bb561001db99 # v0.7.0
+        with:
+          fail-on: high
+          ai: none
+          scanners: none
+          sarif-file: ""

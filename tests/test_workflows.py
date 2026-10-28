@@ -24,3 +24,13 @@ class WorkflowTests(unittest.TestCase):
                     if "uses" in step:
                         with self.subTest(workflow=path.name, uses=step["uses"]):
                             self.assertRegex(step["uses"], r"@[0-9a-f]{40}$")
+
+    def test_pull_requests_are_reviewed_with_a_token_that_can_only_comment(self):
+        flow = yaml.safe_load((ROOT / ".github/workflows/code-review.yml").read_text())
+        self.assertEqual(flow["permissions"], {"contents": "read"})
+        job = flow["jobs"]["review"]
+        self.assertEqual(job["permissions"], {"contents": "read", "pull-requests": "write"})
+        checkout, review = job["steps"]
+        self.assertFalse(checkout["with"]["persist-credentials"])           # the token stays out of .git/config
+        self.assertTrue(review["uses"].startswith("sunilmehta-si/agentic-code-review-tool@"))
+        self.assertEqual(review["with"]["fail-on"], "high")

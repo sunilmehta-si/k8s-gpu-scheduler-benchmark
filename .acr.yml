@@ -1,0 +1,4 @@
+# agentic-code-review-tool settings for pull requests. Tests build bad inputs on purpose, so they are not reviewed.
+fail_on: high
+exclude:
+  - "tests/*"
