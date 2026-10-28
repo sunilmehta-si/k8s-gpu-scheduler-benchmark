@@ -1,8 +1,11 @@
+import io
 import unittest
-from datetime import date
+from contextlib import redirect_stderr, redirect_stdout
+from datetime import date, timedelta
 from unittest import mock
 
 from gpu_sched_bench import versions
+from gpu_sched_bench.cli import main
 from gpu_sched_bench.versions import COMPONENTS, Release, Row, VersionsError, compare, markdown, read_pins, report
 
 TODAY = date(2026, 10, 28)
@@ -58,3 +61,29 @@ class MarkdownTests(unittest.TestCase):
         self.assertIn("1 of 2 behind upstream\n", text)
         self.assertIn("minor behind; published 2026-10-01, adoptable |", text)
         self.assertIn("| v0.20.3 | v0.20.3 | current |", text)
+
+
+class CliTests(unittest.TestCase):
+    def run_cli(self, *argv, published):
+        out, err = io.StringIO(), io.StringIO()
+        with mock.patch.object(versions, "github_latest", return_value=Release("v9.9.9", published)), \
+                redirect_stdout(out), redirect_stderr(err):
+            code = main(["versions", *argv])
+        return code, out.getvalue(), err.getvalue()
+
+    def test_strict_fails_only_on_releases_old_enough_to_adopt(self):
+        code, out, _ = self.run_cli("--strict", published=date.today() - timedelta(days=30))
+        self.assertEqual(code, 1)
+        self.assertIn("5 of 5 behind upstream", out)
+        code, _, err = self.run_cli("--strict", published=date.today() - timedelta(days=3))
+        self.assertEqual(code, 0)
+        self.assertIn("too new to adopt yet: KIND_VERSION v9.9.9", err)
+
+    def test_without_strict_it_only_reports(self):
+        self.assertEqual(self.run_cli(published=date.today() - timedelta(days=30))[0], 0)
+
+    def test_an_unreachable_api_is_an_error(self):
+        with mock.patch.object(versions, "github_latest", side_effect=VersionsError("kubernetes-sigs/kind: offline")), \
+                redirect_stderr(io.StringIO()) as err:
+            self.assertEqual(main(["versions"]), 2)
+        self.assertIn("offline", err.getvalue())

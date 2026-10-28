@@ -63,6 +63,10 @@ def _parser() -> argparse.ArgumentParser:
     cm = sub.add_parser("compare", help="Put a simulation next to a cluster run of the same stack and trace.")
     cm.add_argument("model", help="Results JSON from gsb simulate.")
     cm.add_argument("cluster", help="Results JSON from gsb cluster run.")
+    vs = sub.add_parser("versions", help="Compare the pins in cluster/versions.env with upstream's latest releases.")
+    vs.add_argument("--strict", action="store_true",
+                    help="Exit 1 when a newer release is old enough to adopt (releases younger than 14 days only warn).")
+    vs.add_argument("--output", "-o", help="Write the Markdown table here instead of stdout.")
     tl = sub.add_parser("timeline", help="List which job held which node and when, from a file with placements.")
     tl.add_argument("results", help="Cluster results JSON, or gsb simulate --placements output.")
     tl.add_argument("--stack", required=True, help="Stack to show.")
@@ -112,6 +116,29 @@ def parse_seeds(text: str) -> list[int]:
     if not seeds:
         raise ValueError("no seeds given")
     return sorted(set(seeds))
+
+
+def _cmd_versions(args: argparse.Namespace) -> int:
+    from datetime import date
+
+    from .versions import VersionsError, markdown, read_pins, report
+    today = date.today()
+    try:
+        rows = report(read_pins())
+    except (OSError, VersionsError) as exc:
+        print(f"gsb: {exc}", file=sys.stderr)
+        return 2
+    text = markdown(rows, today)
+    if args.output:
+        Path(args.output).write_text(text)
+    else:
+        sys.stdout.write(text)
+    ready = [r for r in rows if r.status != "current" and not r.too_new(today)]
+    waiting = [r for r in rows if r.too_new(today)]
+    if waiting:
+        print("gsb: too new to adopt yet: " + ", ".join(f"{r.name} {r.latest.tag} from {r.adoptable_on}" for r in waiting),
+              file=sys.stderr)
+    return 1 if args.strict and ready else 0
 
 
 def _cmd_chart(args: argparse.Namespace) -> int:
@@ -361,6 +388,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_timeline(args)
     if args.command == "chart":
         return _cmd_chart(args)
+    if args.command == "versions":
+        return _cmd_versions(args)
     return 0
 
 
