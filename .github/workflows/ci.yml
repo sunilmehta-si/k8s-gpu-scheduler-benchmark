@@ -53,3 +53,22 @@ jobs:
             /tmp/gsb/bin/gsb manifests --stack "$s" --fleet fleets/lab-32.yaml --trace traces/lab-32-8h.jsonl --speedup 60 > "/tmp/$s.yaml"
           done
           /tmp/gsb/bin/gsb fleet render fleets/mixed-256.yaml > /tmp/nodes.yaml
+
+  versions:
+    # Which pinned schedulers and tools have newer releases upstream, in the run's summary. It reports and does not
+    # fail the build: a new upstream release, or the API being unreachable, is not a defect in this repository.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: pip install -e .
+      - name: Compare the pins with upstream releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gsb versions -o "$GITHUB_STEP_SUMMARY"

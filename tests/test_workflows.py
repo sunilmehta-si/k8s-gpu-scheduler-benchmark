@@ -34,3 +34,10 @@ class WorkflowTests(unittest.TestCase):
         self.assertFalse(checkout["with"]["persist-credentials"])           # the token stays out of .git/config
         self.assertTrue(review["uses"].startswith("sunilmehta-si/agentic-code-review-tool@"))
         self.assertEqual(review["with"]["fail-on"], "high")
+
+    def test_ci_reports_pin_drift_without_failing_on_it(self):
+        job = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())["jobs"]["versions"]
+        self.assertTrue(job["continue-on-error"])
+        step = job["steps"][-1]
+        self.assertEqual(step["run"], 'gsb versions -o "$GITHUB_STEP_SUMMARY"')      # not --strict
+        self.assertEqual(step["env"], {"GH_TOKEN": "${{ github.token }}"})
