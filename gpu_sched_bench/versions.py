@@ -123,3 +123,11 @@ def markdown(rows: list[Row], today: date) -> str:
     lines += ["", f"Releases are adopted once they are {MIN_RELEASE_AGE_DAYS} days old, so a broken or withdrawn release "
                   "has time to come to light first.", ""]
     return "\n".join(lines)
+
+
+def as_json(rows: list[Row], today: date) -> str:
+    """One object per pin, for tooling that wants to act on the drift rather than read about it."""
+    return json.dumps([{"name": r.name, "repo": r.repo, "pinned": r.pinned, "latest": r.latest.tag,
+                        "published": r.latest.published.isoformat() if r.latest.published else None,
+                        "status": r.status, "adoptable_on": r.adoptable_on.isoformat() if r.adoptable_on else None,
+                        "too_new": r.too_new(today)} for r in rows], indent=2) + "\n"

@@ -67,6 +67,7 @@ def _parser() -> argparse.ArgumentParser:
     vs.add_argument("--strict", action="store_true",
                     help="Exit 1 when a newer release is old enough to adopt (releases younger than 14 days only warn).")
     vs.add_argument("--output", "-o", help="Write the Markdown table here instead of stdout.")
+    vs.add_argument("--json", metavar="PATH", help="Also write the rows as JSON here.")
     tl = sub.add_parser("timeline", help="List which job held which node and when, from a file with placements.")
     tl.add_argument("results", help="Cluster results JSON, or gsb simulate --placements output.")
     tl.add_argument("--stack", required=True, help="Stack to show.")
@@ -121,7 +122,7 @@ def parse_seeds(text: str) -> list[int]:
 def _cmd_versions(args: argparse.Namespace) -> int:
     from datetime import date
 
-    from .versions import VersionsError, markdown, read_pins, report
+    from .versions import VersionsError, as_json, markdown, read_pins, report
     today = date.today()
     try:
         rows = report(read_pins())
@@ -129,6 +130,8 @@ def _cmd_versions(args: argparse.Namespace) -> int:
         print(f"gsb: {exc}", file=sys.stderr)
         return 2
     text = markdown(rows, today)
+    if args.json:
+        Path(args.json).write_text(as_json(rows, today))
     if args.output:
         Path(args.output).write_text(text)
     else:

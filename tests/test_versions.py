@@ -87,3 +87,18 @@ class CliTests(unittest.TestCase):
                 redirect_stderr(io.StringIO()) as err:
             self.assertEqual(main(["versions"]), 2)
         self.assertIn("offline", err.getvalue())
+
+    def test_json_rows_carry_the_dates_a_tool_needs(self):
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            path = f"{d}/versions.json"
+            out, err = io.StringIO(), io.StringIO()
+            with mock.patch.object(versions, "github_latest", return_value=Release("v9.9.9", date(2026, 10, 27))), \
+                    redirect_stdout(out), redirect_stderr(err):
+                self.assertEqual(main(["versions", "--json", path, "-o", f"{d}/versions.md"]), 0)
+            rows = json.loads(open(path).read())
+        self.assertEqual([r["name"] for r in rows], list(COMPONENTS))
+        self.assertEqual(rows[0]["latest"], "v9.9.9")
+        self.assertEqual(rows[0]["adoptable_on"], "2026-11-10")
+        self.assertEqual({r["status"] for r in rows}, {"major behind"})
