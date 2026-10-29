@@ -103,6 +103,7 @@ Needs Docker, kind, kubectl and Helm ([guide](docs/cluster-runs.md)):
 make cluster STACK=kai          # kind + kwok, install KAI, replay the smoke trace, compare with the model
 make cluster STACK=volcano-binpack   # or any tuned variant: default-binpack, kueue-binpack
 gsb timeline cluster-kai.json --stack kai   # which job held which node, and when
+make versions                   # which pinned scheduler or tool has a newer release upstream
 ```
 
 ## How it works
