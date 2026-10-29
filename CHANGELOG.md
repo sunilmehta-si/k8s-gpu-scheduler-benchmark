@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-29
+
 ### Added
 - `gsb versions`: each pin in `cluster/versions.env` against its latest upstream release, how far behind it is, and
   when a newer release becomes adoptable (14 days after publication); `--strict` fails only on adoptable ones. CI
