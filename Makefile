@@ -4,7 +4,7 @@ PY ?= python3
 STACK ?= kai
 SPEEDUP ?= 300
 
-.PHONY: test results cluster clean
+.PHONY: test results cluster versions clean
 
 test:  ## run the unit tests (also checks committed traces, results, reports and charts)
 	$(PY) -W error::SyntaxWarning -m unittest discover -s tests -t .
@@ -31,3 +31,6 @@ cluster:  ## run the smoke trace on a local kind + kwok cluster with STACK insta
 
 clean:
 	rm -rf build dist *.egg-info cluster-*.json model-*.json
+
+versions:  ## compare the pins in cluster/versions.env with upstream's latest releases
+	$(PY) -m gpu_sched_bench.cli versions
