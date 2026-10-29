@@ -5,7 +5,8 @@
 ### Added
 - `gsb versions`: each pin in `cluster/versions.env` against its latest upstream release, how far behind it is, and
   when a newer release becomes adoptable (14 days after publication); `--strict` fails only on adoptable ones. CI
-  writes the table into every run's summary without failing the build.
+  writes the table into every run's summary without failing the build. `--json PATH` writes the rows with their
+  dates, and `make versions` runs the report.
 - A `code-review` workflow: every pull request is reviewed by agentic-code-review-tool v0.7.0 on its changed lines.
 
 ### Changed

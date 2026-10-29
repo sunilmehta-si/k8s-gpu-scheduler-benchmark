@@ -71,8 +71,8 @@ cluster workflow read: kind v0.33.0 with the Kubernetes v1.37.0 node image by di
 Volcano v1.16.0, KAI Scheduler 0.18.6; the GPU bin-packing kube-scheduler matches the cluster's version. To try
 another release locally, set the variable, for example `KAI_VERSION=0.18.7 scripts/install-kai.sh`.
 
-`gsb versions` compares each pin with the latest upstream release and says how far behind it is; CI writes that
-table into every run's summary. A newer release counts as adoptable once it is 14 days old, and
+`gsb versions` (or `make versions`) compares each pin with the latest upstream release and says how far behind
+it is; CI writes that table into every run's summary, and `--json PATH` writes the rows for tooling. A newer release counts as adoptable once it is 14 days old, and
 `gsb versions --strict` fails only on those, so a release that is withdrawn in its first days never gets measured.
 A bump stays a pull request of its own, because a new scheduler release can change placements and the cluster
 workflow has to show by how much.
