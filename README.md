@@ -132,6 +132,7 @@ and models no hardware effects. Every modelling choice and its source is in [doc
 | Reference simulator, seven presets (four stacks as installed, three tuned), metrics, reports, charts, sweeps, load curves, ablation | Done, tested; committed results reproduced in CI |
 | Real-scheduler runs on kind + kwok for all seven, with runtime and start-lag checks and per-pod placements | Done, in CI on every push |
 | Larger fleets: a 1,024-GPU data centre with a 611-job trace, next to the 256-GPU and 32-GPU fleets | Done, tested; committed results reproduced in CI |
+| Every cluster version pinned in one file, with a report of what upstream has released since and when it is old enough to adopt | Done, in CI on every run |
 | NVIDIA Run:ai full platform, DRA, topology-aware placement | Planned |
 
 Contributions welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
