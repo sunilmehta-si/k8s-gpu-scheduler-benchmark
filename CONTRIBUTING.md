@@ -43,6 +43,14 @@ A **tuned variant** is the same stack with one setting changed (for example `vol
 `SCHEDULER_CONFIG` in `manifests.py` (`gsb manifests --part scheduler` renders it), and an install script that
 installs the base stack and then applies that configuration.
 
+## Bump a pinned release
+
+Every cluster component is pinned in `cluster/versions.env`; `gsb versions` (or `make versions`) says which pins have
+a newer release upstream and from which date it counts as adoptable (14 days after publication, so a withdrawn
+release is never measured). Change the pin in its own pull request and wait for the `cluster` workflow on it: a
+placement that moved is the release changing behaviour, and the pull request should say so.
+[docs/cluster-runs.md](docs/cluster-runs.md) has the steps, including the node image's digest for a kind bump.
+
 ## Contribute a trace
 
 Traces are JSONL, one job per line (see [`trace.py`](gpu_sched_bench/trace.py)). Anonymise team and model names,
