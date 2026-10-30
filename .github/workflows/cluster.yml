@@ -17,9 +17,11 @@ concurrency:
   group: cluster-${{ github.ref }}
   cancel-in-progress: true
 
+# The runner is pinned like every other version here: ubuntu-latest moved to Ubuntu 26.04 on 2026-10-29 and broke a
+# sibling project's cluster runs. A runner bump is a pull request of its own.
 jobs:
   run:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false

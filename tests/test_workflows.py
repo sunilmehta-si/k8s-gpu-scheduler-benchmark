@@ -43,3 +43,8 @@ class WorkflowTests(unittest.TestCase):
         step = job["steps"][-1]
         self.assertEqual(step["run"], 'gsb versions -o "$GITHUB_STEP_SUMMARY"')      # not --strict
         self.assertEqual(step["env"], {"GH_TOKEN": "${{ github.token }}"})
+
+    def test_the_cluster_runner_is_pinned_not_latest(self):
+        flow = yaml.safe_load((ROOT / ".github/workflows/cluster.yml").read_text())
+        for name, job in flow["jobs"].items():
+            self.assertNotIn("latest", str(job["runs-on"]), name)
