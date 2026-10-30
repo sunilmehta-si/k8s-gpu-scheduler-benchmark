@@ -77,6 +77,11 @@ it is; CI writes that table into every run's summary, and `--json PATH` writes t
 A bump stays a pull request of its own, because a new scheduler release can change placements and the cluster
 workflow has to show by how much.
 
+To bump one: change its line in `cluster/versions.env` (for kind, both `KIND_VERSION` and the node image's digest,
+which `docker buildx imagetools inspect kindest/node:vX.Y.Z` prints), run `make test`, open the pull request and
+wait for the `cluster` workflow on it. Its summary shows the model-against-cluster comparison for every stack; a
+placement that moved is the release changing behaviour, and the pull request should say so.
+
 ## Known gaps
 
 - Preemptions are not reconstructed from final pod state, so cluster runs report preempted work as 0.

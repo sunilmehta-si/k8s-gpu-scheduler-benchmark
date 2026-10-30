@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+- CI runs weekly as well as on every push, so the pin drift report in the summary stays current between pushes.
+- `docs/cluster-runs.md` says how to bump a pinned release and what to look at in the cluster run that follows.
+
 ## [0.5.0] - 2026-10-29
 
 ### Added
