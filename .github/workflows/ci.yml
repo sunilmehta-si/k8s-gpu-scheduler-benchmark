@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Weekly, so the pin drift report in the summary stays current when nothing is pushed.
+    - cron: "17 4 * * 1"
 
 permissions:
   contents: read
@@ -57,6 +60,7 @@ jobs:
   versions:
     # Which pinned schedulers and tools have newer releases upstream, in the run's summary. It reports and does not
     # fail the build: a new upstream release, or the API being unreachable, is not a defect in this repository.
+    # The weekly schedule exists for this job: the tests do not change between pushes, the releases do.
     runs-on: ubuntu-latest
     timeout-minutes: 5
     continue-on-error: true

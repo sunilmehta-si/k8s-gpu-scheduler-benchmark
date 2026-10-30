@@ -36,7 +36,9 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(review["with"]["fail-on"], "high")
 
     def test_ci_reports_pin_drift_without_failing_on_it(self):
-        job = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())["jobs"]["versions"]
+        flow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())
+        self.assertIn("cron", flow[True]["schedule"][0])                  # the drift report refreshes weekly
+        job = flow["jobs"]["versions"]
         self.assertTrue(job["continue-on-error"])
         step = job["steps"][-1]
         self.assertEqual(step["run"], 'gsb versions -o "$GITHUB_STEP_SUMMARY"')      # not --strict
