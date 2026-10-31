@@ -21,13 +21,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSIONS = ROOT / "cluster" / "versions.env"
-# The GitHub repository that publishes each pinned release. The node image is pinned by digest and is not compared.
+# The GitHub repository that publishes each pinned release.
 COMPONENTS = {
     "KIND_VERSION": "kubernetes-sigs/kind",
     "KWOK_VERSION": "kubernetes-sigs/kwok",
     "KAI_VERSION": "kai-scheduler/KAI-Scheduler",
     "KUEUE_VERSION": "kubernetes-sigs/kueue",
     "VOLCANO_VERSION": "volcano-sh/volcano",
+}
+# Pins that are not releases to compare, and why. Every line in versions.env is in COMPONENTS or here, so a new pin
+# has to say which it is.
+NOT_COMPARED = {
+    "KIND_NODE_IMAGE": "pinned by digest and chosen from the kind release's notes, which list the node images built for it",
 }
 SEMVER = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
 MIN_RELEASE_AGE_DAYS = 14
