@@ -141,7 +141,7 @@ Contributions welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Other open-source infrastructure work by [Sunil Mehta](https://github.com/sunilmehta-si):
 
-- [k8s-inference-routing-benchmark](https://github.com/sunilmehta-si/k8s-inference-routing-benchmark): How much the router in front of LLM servers matters, measured: a Kubernetes Service against the llm-d Router's scorers on identical chat and RAG traces.
+- [k8s-inference-routing-benchmark](https://github.com/sunilmehta-si/k8s-inference-routing-benchmark): How much the router in front of LLM servers matters, measured: a Kubernetes Service against the llm-d Router's scorers on identical chat and RAG traces, with the picker's estimate of each pod's cache against the pods' real contents.
 - [kubernetes-secure-mlops-pipeline](https://github.com/sunilmehta-si/kubernetes-secure-mlops-pipeline): A model's path from training to serving with every artifact signed, attested and admitted by policy, drilled in CI.
 - [agentic-code-review-tool](https://github.com/sunilmehta-si/agentic-code-review-tool): Scanner-grounded AI code review for the whole pull request: app, infrastructure and AI/agent code.
 - [ai-devsecops-cicd](https://github.com/sunilmehta-si/ai-devsecops-cicd): Reference DevSecOps pipeline for LLM and AI-agent services: AI security tests, SBOM/AI-BOM, signing, admission policy.
