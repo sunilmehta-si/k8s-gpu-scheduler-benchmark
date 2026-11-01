@@ -126,7 +126,8 @@ def markdown(rows: list[Row], today: date) -> str:
             status += f"; published {r.latest.published}, " + (f"adoptable from {r.adoptable_on}" if r.too_new(today) else "adoptable")
         lines.append(f"| {r.name} ([{r.repo}](https://github.com/{r.repo}/releases)) | {r.pinned} | {r.latest.tag} | {status} |")
     lines += ["", f"Releases are adopted once they are {MIN_RELEASE_AGE_DAYS} days old, so a broken or withdrawn release "
-                  "has time to come to light first.", ""]
+                  "has time to come to light first."]
+    lines += ["", "Not compared: " + "; ".join(f"{name} ({why})" for name, why in NOT_COMPARED.items()) + ".", ""]
     return "\n".join(lines)
 
 

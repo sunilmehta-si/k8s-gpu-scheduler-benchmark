@@ -67,6 +67,7 @@ class MarkdownTests(unittest.TestCase):
         self.assertIn("1 of 2 behind upstream\n", text)
         self.assertIn("minor behind; published 2026-10-01, adoptable |", text)
         self.assertIn("| v0.20.3 | v0.20.3 | current |", text)
+        self.assertIn("Not compared: KIND_NODE_IMAGE (pinned by digest", text)     # the reader sees what the table leaves out
 
 
 class CliTests(unittest.TestCase):
