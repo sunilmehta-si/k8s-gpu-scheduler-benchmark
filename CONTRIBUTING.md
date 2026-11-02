@@ -49,7 +49,8 @@ Every cluster component is pinned in `cluster/versions.env`; `gsb versions` (or 
 a newer release upstream and from which date it counts as adoptable (14 days after publication, so a withdrawn
 release is never measured). Change the pin in its own pull request and wait for the `cluster` workflow on it: a
 placement that moved is the release changing behaviour, and the pull request should say so.
-[docs/cluster-runs.md](docs/cluster-runs.md) has the steps, including the node image's digest for a kind bump.
+[docs/cluster-runs.md](docs/cluster-runs.md) has the steps, including the node image's digest for a kind bump; `gsb versions`
+checks that the pinned node image, digest included, is one the pinned kind release's notes list, and exits 1 when it is not.
 
 ## Contribute a trace
 

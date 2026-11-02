@@ -70,10 +70,46 @@ class MarkdownTests(unittest.TestCase):
         self.assertIn("Not compared: KIND_NODE_IMAGE (pinned by digest", text)     # the reader sees what the table leaves out
 
 
+class NodeImageTests(unittest.TestCase):
+    NOTES = ("Images pre-built for this release:\n* v1.37.0: `kindest/node:v1.37.0@sha256:" + "a" * 64 + "`\n"
+             "* v1.36.4: `kindest/node:v1.36.4@sha256:" + "b" * 64 + "`\n")
+
+    def test_the_pinned_node_image_must_be_one_the_kind_release_lists(self):
+        pins = {"KIND_VERSION": "v0.33.0", "KIND_NODE_IMAGE": "kindest/node:v1.37.0@sha256:" + "a" * 64}
+        seen = []
+        def body(repo, tag):
+            seen.append((repo, tag)); return self.NOTES
+        self.assertTrue(versions.node_image_listed(pins, body))
+        self.assertEqual(seen, [("kubernetes-sigs/kind", "v0.33.0")])
+        # the same tag with another digest was built for another release; the tag alone proves nothing
+        pins["KIND_NODE_IMAGE"] = "kindest/node:v1.37.0@sha256:" + "c" * 64
+        self.assertFalse(versions.node_image_listed(pins, body))
+
+    def test_the_committed_pins_pass_against_the_real_notes_shape(self):
+        pins = read_pins()
+        notes = f"* {pins['KIND_NODE_IMAGE'].split(':')[1].split('@')[0]}: `{pins['KIND_NODE_IMAGE']}`"
+        self.assertTrue(versions.node_image_listed(pins, lambda repo, tag: notes))
+
+    def test_markdown_says_whether_the_node_image_is_listed(self):
+        row = Row("KIND_VERSION", "kubernetes-sigs/kind", "v0.33.0", Release("v0.33.0", TODAY))
+        self.assertIn("Node image: listed, digest and all", markdown([row], TODAY, node_image_ok=True))
+        self.assertIn("**not among the images", markdown([row], TODAY, node_image_ok=False))
+        self.assertNotIn("Node image:", markdown([row], TODAY))
+
+    def test_cli_fails_when_the_node_image_is_not_listed(self):
+        out, err = io.StringIO(), io.StringIO()
+        with mock.patch.object(versions, "github_latest", return_value=Release("v0.33.0", date(2026, 1, 1))), \
+                mock.patch.object(versions, "github_release_body", return_value="nothing here"), \
+                redirect_stdout(out), redirect_stderr(err):
+            self.assertEqual(main(["versions"]), 1)
+        self.assertIn("not an image the pinned kind release lists", err.getvalue())
+
+
 class CliTests(unittest.TestCase):
     def run_cli(self, *argv, published):
         out, err = io.StringIO(), io.StringIO()
         with mock.patch.object(versions, "github_latest", return_value=Release("v9.9.9", published)), \
+                mock.patch.object(versions, "github_release_body", return_value=read_pins()["KIND_NODE_IMAGE"]), \
                 redirect_stdout(out), redirect_stderr(err):
             code = main(["versions", *argv])
         return code, out.getvalue(), err.getvalue()
@@ -91,6 +127,7 @@ class CliTests(unittest.TestCase):
 
     def test_an_unreachable_api_is_an_error(self):
         with mock.patch.object(versions, "github_latest", side_effect=VersionsError("kubernetes-sigs/kind: offline")), \
+                mock.patch.object(versions, "github_release_body", return_value=""), \
                 redirect_stderr(io.StringIO()) as err:
             self.assertEqual(main(["versions"]), 2)
         self.assertIn("offline", err.getvalue())
@@ -102,6 +139,7 @@ class CliTests(unittest.TestCase):
             path = f"{d}/versions.json"
             out, err = io.StringIO(), io.StringIO()
             with mock.patch.object(versions, "github_latest", return_value=Release("v9.9.9", date(2026, 10, 27))), \
+                    mock.patch.object(versions, "github_release_body", return_value=read_pins()["KIND_NODE_IMAGE"]), \
                     redirect_stdout(out), redirect_stderr(err):
                 self.assertEqual(main(["versions", "--json", path, "-o", f"{d}/versions.md"]), 0)
             rows = json.loads(open(path).read())

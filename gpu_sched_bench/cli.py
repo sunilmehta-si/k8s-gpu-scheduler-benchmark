@@ -122,14 +122,16 @@ def parse_seeds(text: str) -> list[int]:
 def _cmd_versions(args: argparse.Namespace) -> int:
     from datetime import date
 
-    from .versions import VersionsError, as_json, markdown, read_pins, report
+    from .versions import VersionsError, as_json, markdown, node_image_listed, read_pins, report
     today = date.today()
     try:
-        rows = report(read_pins())
+        pins = read_pins()
+        rows = report(pins)
+        node_ok = node_image_listed(pins)
     except (OSError, VersionsError) as exc:
         print(f"gsb: {exc}", file=sys.stderr)
         return 2
-    text = markdown(rows, today)
+    text = markdown(rows, today, node_ok)
     if args.json:
         Path(args.json).write_text(as_json(rows, today))
     if args.output:
@@ -141,7 +143,9 @@ def _cmd_versions(args: argparse.Namespace) -> int:
     if waiting:
         print("gsb: too new to adopt yet: " + ", ".join(f"{r.name} {r.latest.tag} from {r.adoptable_on}" for r in waiting),
               file=sys.stderr)
-    return 1 if args.strict and ready else 0
+    if not node_ok:
+        print("gsb: KIND_NODE_IMAGE is not an image the pinned kind release lists", file=sys.stderr)
+    return 1 if (args.strict and ready) or not node_ok else 0
 
 
 def _cmd_chart(args: argparse.Namespace) -> int:

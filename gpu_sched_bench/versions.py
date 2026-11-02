@@ -106,6 +106,30 @@ def github_latest(repo: str) -> Release:
         raise VersionsError(f"{repo}: could not read the latest release: {exc}") from exc
 
 
+def github_release_body(repo: str, tag: str) -> str:
+    """The release notes of one tag through the API; GH_TOKEN or GITHUB_TOKEN raises the rate limit when set."""
+    request = urllib.request.Request(f"https://api.github.com/repos/{repo}/releases/tags/{tag}",
+                                     headers={"Accept": "application/vnd.github+json", "User-Agent": "gsb-versions"})
+    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if token:
+        request.add_header("Authorization", f"Bearer {token}")
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:   # noqa: S310 - fixed https API URL
+            return str(json.load(response).get("body") or "")
+    except (OSError, ValueError) as exc:
+        raise VersionsError(f"{repo} {tag}: could not read the release notes: {exc}") from exc
+
+
+def node_image_listed(pins: dict[str, str], fetch_body: Callable[[str, str], str] | None = None) -> bool:
+    """True when the pinned node image, digest included, is one the pinned kind release's notes list.
+
+    kind builds node images per release and says to use them by digest; a node image from another release can
+    start, and fail in ways that look like the scheduler under test. The notes list every image as
+    `kindest/node:<k8s>@sha256:<digest>`, so the check is that exact string."""
+    fetch_body = fetch_body or github_release_body
+    return pins["KIND_NODE_IMAGE"] in fetch_body(COMPONENTS["KIND_VERSION"], pins["KIND_VERSION"])
+
+
 def report(pins: dict[str, str], fetch: Callable[[str], Release] | None = None) -> list[Row]:
     fetch = fetch or github_latest                  # looked up per call, so tests can patch github_latest
     missing = sorted(set(COMPONENTS) - set(pins))
@@ -114,7 +138,7 @@ def report(pins: dict[str, str], fetch: Callable[[str], Release] | None = None) 
     return [Row(name, repo, pins[name], fetch(repo)) for name, repo in COMPONENTS.items()]
 
 
-def markdown(rows: list[Row], today: date) -> str:
+def markdown(rows: list[Row], today: date, node_image_ok: bool | None = None) -> str:
     behind = [r for r in rows if r.status != "current"]
     waiting = [r for r in behind if r.too_new(today)]
     lines = [f"## Pinned versions: {len(behind)} of {len(rows)} behind upstream"
@@ -127,7 +151,11 @@ def markdown(rows: list[Row], today: date) -> str:
         lines.append(f"| {r.name} ([{r.repo}](https://github.com/{r.repo}/releases)) | {r.pinned} | {r.latest.tag} | {status} |")
     lines += ["", f"Releases are adopted once they are {MIN_RELEASE_AGE_DAYS} days old, so a broken or withdrawn release "
                   "has time to come to light first."]
-    lines += ["", "Not compared: " + "; ".join(f"{name} ({why})" for name, why in NOT_COMPARED.items()) + ".", ""]
+    lines += ["", "Not compared: " + "; ".join(f"{name} ({why})" for name, why in NOT_COMPARED.items()) + "."]
+    if node_image_ok is not None:
+        lines += ["", "Node image: " + ("listed, digest and all, in the pinned kind release's notes." if node_image_ok else
+                  "**not among the images the pinned kind release's notes list**: it was built for another kind release.")]
+    lines.append("")
     return "\n".join(lines)
 
 
