@@ -6,6 +6,7 @@
 - `gsb versions` checks that the pinned kind node image, digest and all, is one the pinned kind release's notes list,
   and exits 1 when it is not; the report also lists the pins it does not compare, with the reason, and a test holds
   every line of `cluster/versions.env` to one list or the other.
+- `gsb versions --json` carries the node-image check as a final object beside the drift rows.
 
 ### Changed
 - Pull requests are reviewed with the code review tool at v0.9.0.
