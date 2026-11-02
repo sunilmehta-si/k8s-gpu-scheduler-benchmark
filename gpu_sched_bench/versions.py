@@ -159,9 +159,13 @@ def markdown(rows: list[Row], today: date, node_image_ok: bool | None = None) ->
     return "\n".join(lines)
 
 
-def as_json(rows: list[Row], today: date) -> str:
-    """One object per pin, for tooling that wants to act on the drift rather than read about it."""
-    return json.dumps([{"name": r.name, "repo": r.repo, "pinned": r.pinned, "latest": r.latest.tag,
-                        "published": r.latest.published.isoformat() if r.latest.published else None,
-                        "status": r.status, "adoptable_on": r.adoptable_on.isoformat() if r.adoptable_on else None,
-                        "too_new": r.too_new(today)} for r in rows], indent=2) + "\n"
+def as_json(rows: list[Row], today: date, node_image_ok: bool | None = None) -> str:
+    """One object per pin, for tooling that wants to act on the drift rather than read about it; the node image check
+    rides along as a final object when it ran, so a tool reads one file for everything the report knows."""
+    out = [{"name": r.name, "repo": r.repo, "pinned": r.pinned, "latest": r.latest.tag,
+            "published": r.latest.published.isoformat() if r.latest.published else None,
+            "status": r.status, "adoptable_on": r.adoptable_on.isoformat() if r.adoptable_on else None,
+            "too_new": r.too_new(today)} for r in rows]
+    if node_image_ok is not None:
+        out.append({"name": "KIND_NODE_IMAGE", "check": "listed in the pinned kind release's notes", "ok": node_image_ok})
+    return json.dumps(out, indent=2) + "\n"

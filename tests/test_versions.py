@@ -143,7 +143,9 @@ class CliTests(unittest.TestCase):
                     redirect_stdout(out), redirect_stderr(err):
                 self.assertEqual(main(["versions", "--json", path, "-o", f"{d}/versions.md"]), 0)
             rows = json.loads(open(path).read())
-        self.assertEqual([r["name"] for r in rows], list(COMPONENTS))
+        self.assertEqual([r["name"] for r in rows[:-1]], list(COMPONENTS))
+        self.assertEqual(rows[-1], {"name": "KIND_NODE_IMAGE", "check": "listed in the pinned kind release's notes", "ok": True})
+        rows = rows[:-1]
         self.assertEqual(rows[0]["latest"], "v9.9.9")
         self.assertEqual(rows[0]["adoptable_on"], "2026-11-10")
         self.assertEqual({r["status"] for r in rows}, {"major behind"})

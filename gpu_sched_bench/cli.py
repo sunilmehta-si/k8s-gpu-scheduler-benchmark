@@ -133,7 +133,7 @@ def _cmd_versions(args: argparse.Namespace) -> int:
         return 2
     text = markdown(rows, today, node_ok)
     if args.json:
-        Path(args.json).write_text(as_json(rows, today))
+        Path(args.json).write_text(as_json(rows, today, node_ok))
     if args.output:
         Path(args.output).write_text(text)
     else:
