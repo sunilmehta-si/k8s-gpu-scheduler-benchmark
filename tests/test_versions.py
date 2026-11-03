@@ -1,4 +1,6 @@
 import io
+import json
+import os
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from datetime import date, timedelta
@@ -11,6 +13,33 @@ from gpu_sched_bench.versions import COMPONENTS, NOT_COMPARED, Release, Row, Ver
 TODAY = date(2026, 10, 28)
 
 
+class FakeResponse:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def read(self, *args):
+        return json.dumps(self.payload).encode()
+
+
+def serving(routes):
+    """A urlopen stand-in: the payload whose path ends the requested URL, else an unreachable API. Also returns the requests seen."""
+    seen = []
+
+    def urlopen(request, timeout=None):
+        seen.append(request)
+        for suffix, payload in routes.items():
+            if request.full_url.endswith(suffix):
+                return FakeResponse(payload)
+        raise OSError(f"no route for {request.full_url}")
+    return urlopen, seen
+
+
 class CompareTests(unittest.TestCase):
     def test_how_far_behind(self):
         self.assertEqual(compare("0.18.6", "v0.18.6"), "current")        # KAI pins without the v its tags carry
@@ -19,6 +48,38 @@ class CompareTests(unittest.TestCase):
         self.assertEqual(compare("v0.8.0", "v1.0.0"), "major behind")
         self.assertEqual(compare("v0.21.0", "v0.20.9"), "current")       # a pin ahead of "latest" is not behind
         self.assertEqual(compare("v1.0.0-rc.1", "v1.0.0"), "unknown")
+
+
+class GithubApiTests(unittest.TestCase):
+    LATEST = {"tag_name": "v1.2.3", "published_at": "2026-10-20T08:00:00Z"}
+
+    def read(self, routes, env=None):
+        urlopen, seen = serving(routes)
+        with mock.patch.dict(os.environ, env or {}, clear=True), mock.patch.object(versions.urllib.request, "urlopen", urlopen):
+            return versions.github_latest("o/r"), seen
+
+    def test_the_latest_release_carries_its_tag_and_publish_date(self):
+        release, _ = self.read({"/repos/o/r/releases/latest": self.LATEST})
+        self.assertEqual(release, Release("v1.2.3", date(2026, 10, 20)))
+
+    def test_a_token_raises_the_rate_limit_and_none_sends_no_header(self):
+        _, seen = self.read({"/releases/latest": self.LATEST}, env={"GH_TOKEN": "t0k"})
+        self.assertEqual(seen[0].get_header("Authorization"), "Bearer t0k")
+        _, seen = self.read({"/releases/latest": self.LATEST})
+        self.assertIsNone(seen[0].get_header("Authorization"))
+
+    def test_the_release_notes_come_back_as_text(self):
+        urlopen, _ = serving({"/releases/tags/v1.2.3": {"body": "notes"}})
+        with mock.patch.object(versions.urllib.request, "urlopen", urlopen):
+            self.assertEqual(versions.github_release_body("o/r", "v1.2.3"), "notes")
+
+    def test_an_unreachable_api_is_a_versions_error_for_both_lookups(self):
+        urlopen, _ = serving({})
+        with mock.patch.object(versions.urllib.request, "urlopen", urlopen):
+            with self.assertRaisesRegex(VersionsError, "latest release"):
+                versions.github_latest("o/r")
+            with self.assertRaisesRegex(VersionsError, "release notes"):
+                versions.github_release_body("o/r", "v1.2.3")
 
 
 class ReportTests(unittest.TestCase):
