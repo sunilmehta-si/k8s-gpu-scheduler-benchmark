@@ -1,10 +1,16 @@
+# Each update waits 14 days after a release, the same age rule the versions report applies to the pins, so a
+# compromised or withdrawn release is usually found before it is proposed. Security updates are not delayed.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 14
   - package-ecosystem: pip
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 14
