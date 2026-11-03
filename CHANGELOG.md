@@ -10,6 +10,8 @@
 
 ### Changed
 - Pull requests are reviewed with the code review tool at v0.9.0.
+- `gsb versions` reports the newest stable release (the highest plain x.y.z that is not a draft or prerelease), not
+  the one GitHub marks latest, so a project that marks its release candidates is not compared against one.
 
 ### Added
 - CI runs weekly as well as on every push, so the pin drift report in the summary stays current between pushes.
