@@ -51,6 +51,9 @@ release is never measured). Change the pin in its own pull request and wait for 
 placement that moved is the release changing behaviour, and the pull request should say so.
 [docs/cluster-runs.md](docs/cluster-runs.md) has the steps, including the node image's digest for a kind bump; `gsb versions`
 checks that the pinned node image, digest included, is one the pinned kind release's notes list, and exits 1 when it is not.
+The release a pin is compared with is the newest stable one: a release candidate is skipped even when upstream marks it
+latest. Dependabot's pull requests for the actions and pip wait the same 14 days (`cooldown` in `.github/dependabot.yml`,
+held by `tests/test_dependabot.py`); security updates are not delayed.
 
 ## Contribute a trace
 

@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ### Added
+- Dependabot updates wait 14 days after a release, like the pins `gsb versions` checks, and `tests/test_dependabot.py`
+  holds the cooldown.
 - `gsb versions` checks that the pinned kind node image, digest and all, is one the pinned kind release's notes list,
   and exits 1 when it is not; the report also lists the pins it does not compare, with the reason, and a test holds
   every line of `cluster/versions.env` to one list or the other.
