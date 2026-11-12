@@ -9,6 +9,9 @@
   and exits 1 when it is not; the report also lists the pins it does not compare, with the reason, and a test holds
   every line of `cluster/versions.env` to one list or the other.
 - `gsb versions --json` carries the node-image check as a final object beside the drift rows.
+- `gsb versions` names an earlier release that is already 14 days old when the newest is not (Kueue v0.20.4
+  while v0.20.5 waits), and `--strict` fails on it. Before, such a pin read as "too new" until the newest release
+  aged, holding back a fix that was ready. `--json` adds `adoptable_now`, `ready` and `ready_published`.
 
 ### Changed
 - Pull requests are reviewed with the code review tool at v0.9.0.

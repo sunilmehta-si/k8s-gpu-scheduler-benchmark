@@ -6,7 +6,9 @@ the pin is. It reports; a bump stays a person's decision, because it can change 
 cluster workflow has to show it.
 
 A newer release counts as adoptable only once it is MIN_RELEASE_AGE_DAYS old: a broken or compromised release is
-usually caught and withdrawn within days, and a benchmark gains nothing from being first.
+usually caught and withdrawn within days, and a benchmark gains nothing from being first. When the newest release is
+too new, an earlier one past the pin may already be old enough (Kueue v0.20.4 while v0.20.5 waits), and the report
+names it, so a fix that has aged is not held back by the one released after it.
 """
 from __future__ import annotations
 
@@ -54,6 +56,8 @@ class Row:
     repo: str
     pinned: str
     latest: Release
+    # The newest release past the pin that is already old enough, when the latest is not.
+    ready: Release | None = None
 
     @property
     def status(self) -> str:
@@ -67,6 +71,10 @@ class Row:
 
     def too_new(self, today: date) -> bool:
         return self.status != "current" and self.adoptable_on is not None and today < self.adoptable_on
+
+    def adoptable_now(self, today: date) -> bool:
+        """A release past the pin can be taken today: the latest, or an earlier one when the latest is too new."""
+        return self.status != "current" and (not self.too_new(today) or self.ready is not None)
 
 
 def read_pins(path: Path = VERSIONS) -> dict[str, str]:
@@ -106,6 +114,35 @@ def _release(data: dict) -> Release:
     return Release(str(data["tag_name"]), datetime.fromisoformat(published.replace("Z", "+00:00")).date() if published else None)
 
 
+def _semver(tag: str) -> tuple[int, int, int]:
+    return tuple(map(int, SEMVER.match(tag).groups()))
+
+
+def _stable_listing(repo: str) -> list[dict]:
+    """The newest 50 releases that are published, not drafts or prereleases, and plain x.y.z."""
+    listing = _github_json(f"repos/{repo}/releases?per_page=50")
+    if not isinstance(listing, list):
+        raise ValueError("expected a list of releases")
+    return [r for r in listing if not r.get("draft") and not r.get("prerelease") and SEMVER.match(str(r.get("tag_name")))]
+
+
+def github_stable(repo: str) -> list[Release]:
+    """Every stable release among the newest 50, highest version first."""
+    try:
+        return [_release(r) for r in sorted(_stable_listing(repo), key=lambda r: _semver(r["tag_name"]), reverse=True)]
+    except (OSError, ValueError, KeyError) as exc:
+        raise VersionsError(f"{repo}: could not read the releases: {exc}") from exc
+
+
+def newest_ready(pinned: str, releases: list[Release], today: date) -> Release | None:
+    """The highest release past the pin that is MIN_RELEASE_AGE_DAYS old by today, if any."""
+    if not SEMVER.match(pinned):
+        return None
+    old_enough = [r for r in releases if SEMVER.match(r.tag) and _semver(r.tag) > _semver(pinned) and r.published
+                  and r.published + timedelta(days=MIN_RELEASE_AGE_DAYS) <= today]
+    return max(old_enough, key=lambda r: _semver(r.tag), default=None)
+
+
 def github_latest(repo: str) -> Release:
     """The newest stable release: the highest plain x.y.z among published, non-draft, non-prerelease releases.
 
@@ -114,12 +151,9 @@ def github_latest(repo: str) -> Release:
     lists the releases shows the stable ones. A repository with no plain x.y.z release falls back to
     `releases/latest`."""
     try:
-        listing = _github_json(f"repos/{repo}/releases?per_page=50")
-        if not isinstance(listing, list):
-            raise ValueError("expected a list of releases")
-        stable = [r for r in listing if not r.get("draft") and not r.get("prerelease") and SEMVER.match(str(r.get("tag_name")))]
+        stable = _stable_listing(repo)
         if stable:
-            return _release(max(stable, key=lambda r: tuple(map(int, SEMVER.match(r["tag_name"]).groups()))))
+            return _release(max(stable, key=lambda r: _semver(r["tag_name"])))
         return _release(_github_json(f"repos/{repo}/releases/latest"))
     except (OSError, ValueError, KeyError) as exc:
         raise VersionsError(f"{repo}: could not read the latest release: {exc}") from exc
@@ -143,17 +177,28 @@ def node_image_listed(pins: dict[str, str], fetch_body: Callable[[str, str], str
     return pins["KIND_NODE_IMAGE"] in fetch_body(COMPONENTS["KIND_VERSION"], pins["KIND_VERSION"])
 
 
-def report(pins: dict[str, str], fetch: Callable[[str], Release] | None = None) -> list[Row]:
+def report(pins: dict[str, str], fetch: Callable[[str], Release] | None = None,
+           fetch_all: Callable[[str], list[Release]] | None = None, today: date | None = None) -> list[Row]:
+    """One row per component. Only when the latest release is too new are the earlier ones listed, to find one
+    that is old enough: one more API call, for the few pins that need it."""
     fetch = fetch or github_latest                  # looked up per call, so tests can patch github_latest
+    fetch_all = fetch_all or github_stable
+    today = today or date.today()
     missing = sorted(set(COMPONENTS) - set(pins))
     if missing:
         raise VersionsError(f"cluster/versions.env has no {', '.join(missing)}")
-    return [Row(name, repo, pins[name], fetch(repo)) for name, repo in COMPONENTS.items()]
+    rows = []
+    for name, repo in COMPONENTS.items():
+        row = Row(name, repo, pins[name], fetch(repo))
+        if row.too_new(today):
+            row = Row(name, repo, row.pinned, row.latest, newest_ready(row.pinned, fetch_all(repo), today))
+        rows.append(row)
+    return rows
 
 
 def markdown(rows: list[Row], today: date, node_image_ok: bool | None = None) -> str:
     behind = [r for r in rows if r.status != "current"]
-    waiting = [r for r in behind if r.too_new(today)]
+    waiting = [r for r in behind if r.too_new(today) and r.ready is None]
     lines = [f"## Pinned versions: {len(behind)} of {len(rows)} behind upstream"
              + (f", {len(waiting)} of them too new to adopt yet" if waiting else ""), "",
              "| Component | Pinned | Latest release | Status |", "|---|---|---|---|"]
@@ -161,6 +206,8 @@ def markdown(rows: list[Row], today: date, node_image_ok: bool | None = None) ->
         status = r.status
         if status != "current" and r.latest.published:
             status += f"; published {r.latest.published}, " + (f"adoptable from {r.adoptable_on}" if r.too_new(today) else "adoptable")
+            if r.too_new(today) and r.ready:
+                status += f"; **{r.ready.tag}** (published {r.ready.published}) is adoptable now"
         lines.append(f"| {r.name} ([{r.repo}](https://github.com/{r.repo}/releases)) | {r.pinned} | {r.latest.tag} | {status} |")
     lines += ["", f"Releases are adopted once they are {MIN_RELEASE_AGE_DAYS} days old, so a broken or withdrawn release "
                   "has time to come to light first."]
@@ -178,7 +225,9 @@ def as_json(rows: list[Row], today: date, node_image_ok: bool | None = None) -> 
     out = [{"name": r.name, "repo": r.repo, "pinned": r.pinned, "latest": r.latest.tag,
             "published": r.latest.published.isoformat() if r.latest.published else None,
             "status": r.status, "adoptable_on": r.adoptable_on.isoformat() if r.adoptable_on else None,
-            "too_new": r.too_new(today)} for r in rows]
+            "too_new": r.too_new(today), "adoptable_now": r.adoptable_now(today),
+            "ready": r.ready.tag if r.ready else None,
+            "ready_published": r.ready.published.isoformat() if r.ready and r.ready.published else None} for r in rows]
     if node_image_ok is not None:
         out.append({"name": "KIND_NODE_IMAGE", "check": "listed in the pinned kind release's notes", "ok": node_image_ok})
     return json.dumps(out, indent=2) + "\n"

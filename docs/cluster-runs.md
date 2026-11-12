@@ -74,6 +74,9 @@ another release locally, set the variable, for example `KAI_VERSION=0.18.7 scrip
 `gsb versions` (or `make versions`) compares each pin with the latest upstream release and says how far behind
 it is; CI writes that table into every run's summary, and `--json PATH` writes the rows for tooling. A newer release counts as adoptable once it is 14 days old, and
 `gsb versions --strict` fails only on those, so a release that is withdrawn in its first days never gets measured.
+When the newest release is too new, the report names the highest earlier release past the pin that is already 14
+days old, if there is one (Kueue v0.20.4 while v0.20.5 waits), and `--strict` counts it as adoptable; `--json`
+carries it as `ready`.
 A bump stays a pull request of its own, because a new scheduler release can change placements and the cluster
 workflow has to show by how much.
 
