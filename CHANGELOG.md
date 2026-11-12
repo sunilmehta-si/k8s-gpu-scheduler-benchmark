@@ -14,6 +14,8 @@
   aged, holding back a fix that was ready. `--json` adds `adoptable_now`, `ready` and `ready_published`.
 
 ### Changed
+- The cluster workflow installs Kueue v0.20.4 (was v0.20.3; published 29 Oct, adoptable from 12 Nov). Its notes
+  change Kueue's scheduler log messages and levels; the runs collect those logs but nothing here parses them.
 - Pull requests are reviewed with the code review tool at v0.9.0.
 - `gsb versions` reports the newest stable release (the highest plain x.y.z that is not a draft or prerelease), not
   the one GitHub marks latest, so a project that marks its release candidates is not compared against one.
