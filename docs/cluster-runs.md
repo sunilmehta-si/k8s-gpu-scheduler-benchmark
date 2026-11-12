@@ -85,10 +85,34 @@ which `docker buildx imagetools inspect kindest/node:vX.Y.Z` prints), run `make 
 wait for the `cluster` workflow on it. Its summary shows the model-against-cluster comparison for every stack; a
 placement that moved is the release changing behaviour, and the pull request should say so.
 
+## One run is one draw
+
+A stack that places GPU pods without looking at GPUs can give a different result on the next run of the same trace.
+On the smoke trace the default scheduler, Kueue and Volcano as installed each land on one of two outcomes: the
+default scheduler and Kueue on the expensive one in about seven runs of ten, Volcano on its slower one in three; the
+stacks that score GPUs give the same result every time
+([results/cluster/repeats.md](../results/cluster/repeats.md)). A claim about a real scheduler therefore rests on
+every run since the last change to the harness, not on the latest one:
+
+```bash
+scripts/fetch-cluster-runs.sh cluster-runs        # every successful run on main since 38889757797, needs gh
+gsb repeats cluster-runs --source "..." -o results/cluster/repeats.json --markdown results/cluster/repeats.md
+```
+
+`gsb repeats` reports each stack's median and range, splits a stack's runs into outcomes where neighbouring costs
+differ by more than 10% of its median, and keeps each run's numbers, the nodes each job kind ran on and when each
+job started. GitHub deletes workflow artifacts after 90 days, so the committed file is what keeps the evidence;
+rerun the two commands above to add newer runs. The tests check that the README's real-scheduler table, and what it
+says about each outcome, match the committed file.
+
 ## Known gaps
 
 - Preemptions are not reconstructed from final pod state, so cluster runs report preempted work as 0.
 - The smoke trace is small (12 jobs) to keep CI fast. The 8-hour sample traces (26, 131 and 611 jobs on the 32-, 256-
   and 1,024-GPU fleets) have only been simulated so far. Cluster runs of them work the same way: one kwok node per
   fleet node, and wall time of the trace's makespan divided by the speedup.
+- kwok completes each pod once its duration has passed, whether or not the rest of its gang is running. When only
+  one of a training gang's two pods fits, that pod is counted as stranded until the second one starts, but kwok then
+  ends it on schedule and the second pod runs alone. A real training job would keep waiting, so the expensive outcome
+  of the default scheduler and Kueue is, if anything, cheaper here than it would be on real GPUs.
 - The NVIDIA Run:ai full platform and DRA-based GPU allocation are not covered yet.

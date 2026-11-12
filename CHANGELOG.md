@@ -2,7 +2,22 @@
 
 ## [Unreleased]
 
+### Fixed
+- The README's real-scheduler table put Kueue as installed at $3.97 per useful GPU-hour, level with KAI. That came
+  from one run (38889757797), and it was Kueue's less common outcome. Over all 30 runs since the kwok fixes, Kueue
+  as installed costs $5.21 in 21 runs and $3.98 in 9, and the default scheduler and Volcano split the same way.
+  Whether an inference pod lands on an H100 node decides every default-scheduler and Kueue run. The table now shows
+  medians over every run and each outcome's cost; the stacks that score GPUs give one outcome each, within 4%.
+  `results/cluster/` now holds run 43266087495 (current pins), which shows each stack's usual outcome.
+
 ### Added
+- `gsb repeats` summarises many cluster runs: each stack's median and range, its outcomes when its costs split, and
+  per run the metrics, the nodes each job kind used and when each job started. `scripts/fetch-cluster-runs.sh`
+  downloads every successful run on `main`; `results/cluster/repeats.json` and `repeats.md` keep the 30 runs from
+  16 October to 12 November, since GitHub deletes the artifacts after 90 days. Tests hold the README table and what
+  the README and docs say about each outcome to the committed runs.
+- `docs/cluster-runs.md` explains why one run is one draw, and lists a kwok gap: it completes a pod on schedule even
+  when the rest of its gang never started, so the expensive outcome is if anything cheaper here than on real GPUs.
 - Dependabot updates wait 14 days after a release, like the pins `gsb versions` checks, and `tests/test_dependabot.py`
   holds the cooldown.
 - `gsb versions` checks that the pinned kind node image, digest and all, is one the pinned kind release's notes list,
