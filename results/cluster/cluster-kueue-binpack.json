@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "tool_version": "0.2.0",
+  "tool_version": "0.5.0",
   "mode": "cluster",
   "fleet": {
     "name": "lab-32",
@@ -39,107 +39,107 @@
         "name": "kueue-binpack",
         "source": "cluster"
       },
-      "makespan_h": 7.34,
+      "makespan_h": 7.35,
       "jobs": 12,
       "jobs_finished": 12,
       "deadlocked": false,
-      "utilisation": 0.439,
-      "useful_utilisation": 0.439,
+      "utilisation": 0.4414,
+      "useful_utilisation": 0.4414,
       "stranded_gpu_h": 0.0,
       "preempted_gpu_h": 0.0,
       "queue_wait": {
         "jobs": 12,
-        "p50_min": -0.0,
-        "p95_min": 120.1,
-        "max_min": 120.1
+        "p50_min": -2.4,
+        "p95_min": 122.0,
+        "max_min": 122.0
       },
       "queue_wait_by_kind": {
         "finetune": {
           "jobs": 3,
-          "p50_min": 5.8,
-          "p95_min": 37.4,
-          "max_min": 37.4
+          "p50_min": -2.4,
+          "p95_min": 39.2,
+          "max_min": 39.2
         },
         "inference": {
           "jobs": 2,
-          "p50_min": -1.6,
-          "p95_min": 5.7,
-          "max_min": 5.7
+          "p50_min": -2.4,
+          "p95_min": 0.3,
+          "max_min": 0.3
         },
         "notebook": {
           "jobs": 6,
-          "p50_min": -0.2,
-          "p95_min": 0.5,
-          "max_min": 0.5
+          "p50_min": -3.1,
+          "p95_min": -0.7,
+          "max_min": -0.7
         },
         "training": {
           "jobs": 1,
-          "p50_min": 120.1,
-          "p95_min": 120.1,
-          "max_min": 120.1
+          "p50_min": 122.0,
+          "p95_min": 122.0,
+          "max_min": 122.0
         }
       },
       "fragmentation": {
         "idle_while_waiting_gpu_h": 31.9,
-        "stranded_by_size": 0.4118,
-        "scattered_free": 0.2432,
-        "partial_nodes": 0.3779
+        "stranded_by_size": 0.4461,
+        "scattered_free": 0.2384,
+        "partial_nodes": 0.3748
       },
       "fairness": {
-        "jain_service": 0.9848,
+        "jain_service": 0.9881,
         "jain_served_share": 1.0,
         "teams": {
           "platform": {
             "jobs": 4,
             "requested_gpu_h": 6.1,
-            "service": 1.1098,
+            "service": 1.0642,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
-            "p50_min": -0.2,
-            "p95_min": 5.8,
-            "max_min": 5.8
+            "p50_min": -2.7,
+            "p95_min": -0.7,
+            "max_min": -0.7
           },
           "product": {
             "jobs": 5,
             "requested_gpu_h": 95.8,
-            "service": 0.8422,
+            "service": 0.8522,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
-            "p50_min": 5.7,
-            "p95_min": 120.1,
-            "max_min": 120.1
+            "p50_min": 0.3,
+            "p95_min": 122.0,
+            "max_min": 122.0
           },
           "research": {
             "jobs": 3,
             "requested_gpu_h": 1.7,
-            "service": 1.1121,
+            "service": 1.1042,
             "served_share": 1.0,
             "never_started": 0,
             "preemptions": 0,
-            "p50_min": -0.0,
-            "p95_min": 0.0,
-            "max_min": 0.0
+            "p50_min": -3.1,
+            "p95_min": -2.2,
+            "max_min": -2.2
           }
         }
       },
       "cost": {
-        "total": 409.58,
-        "idle": 218.41,
-        "stranded": 0.0,
+        "total": 412.93,
+        "idle": 220.1,
+        "stranded": 1.67,
         "preempted_work": 0.0,
-        "per_useful_gpu_h": 3.97,
+        "per_useful_gpu_h": 3.977,
         "by_team": {
           "platform": 6.08,
-          "product": 183.33,
+          "product": 185.0,
           "research": 1.75
         },
         "by_model": {
           "mixtral-8x22b": 100.0,
           "embed-api": 36.67,
+          "embedder": 25.0,
           "llama-8b-lora": 23.33,
-          "embedder": 23.33,
           "notebook": 4.17,
           "qwen-14b-lora": 3.67
         }
@@ -149,137 +149,137 @@
           "job": "finetune-00002",
           "replica": 0,
           "node": "h100-000",
-          "placed_s": 408.7,
-          "start_s": 408.7,
-          "end_s": 4608.7
+          "placed_s": 220.4,
+          "start_s": 220.4,
+          "end_s": 4420.4
         },
         {
           "job": "finetune-00008",
           "replica": 0,
           "node": "h100-000",
-          "placed_s": 4608.7,
-          "start_s": 4608.7,
-          "end_s": 8808.7
+          "placed_s": 4420.4,
+          "start_s": 4720.4,
+          "end_s": 8920.4
         },
         {
           "job": "finetune-00009",
           "replica": 0,
           "node": "l40s-000",
-          "placed_s": 2808.7,
-          "start_s": 2808.7,
-          "end_s": 9408.7
+          "placed_s": 2320.4,
+          "start_s": 2320.4,
+          "end_s": 8920.4
         },
         {
           "job": "inference-00006",
           "replica": 0,
           "node": "l40s-000",
-          "placed_s": 1608.7,
-          "start_s": 1608.7,
-          "end_s": 25008.7
+          "placed_s": 1720.4,
+          "start_s": 1720.4,
+          "end_s": 25120.4
         },
         {
           "job": "inference-00006",
           "replica": 1,
           "node": "l40s-000",
-          "placed_s": 1608.7,
-          "start_s": 1608.7,
-          "end_s": 25008.7
+          "placed_s": 1720.4,
+          "start_s": 1720.4,
+          "end_s": 25120.4
         },
         {
           "job": "inference-00010",
           "replica": 0,
           "node": "l40s-001",
-          "placed_s": 2808.7,
-          "start_s": 2808.7,
-          "end_s": 24108.7
+          "placed_s": 2320.4,
+          "start_s": 2320.4,
+          "end_s": 23620.4
         },
         {
           "job": "inference-00010",
           "replica": 1,
           "node": "l40s-001",
-          "placed_s": 2808.7,
-          "start_s": 2808.7,
-          "end_s": 24108.7
+          "placed_s": 2320.4,
+          "start_s": 2320.4,
+          "end_s": 23620.4
         },
         {
           "job": "inference-00010",
           "replica": 2,
           "node": "l40s-002",
-          "placed_s": 2808.7,
-          "start_s": 2808.7,
-          "end_s": 24108.7
+          "placed_s": 2320.4,
+          "start_s": 2320.4,
+          "end_s": 23620.4
         },
         {
           "job": "inference-00010",
           "replica": 3,
-          "node": "l40s-001",
-          "placed_s": 2808.7,
-          "start_s": 2808.7,
-          "end_s": 24108.7
+          "node": "l40s-002",
+          "placed_s": 2320.4,
+          "start_s": 2320.4,
+          "end_s": 23620.4
         },
         {
           "job": "notebook-00001",
           "replica": 0,
           "node": "l40s-001",
-          "placed_s": 108.7,
-          "start_s": 108.7,
-          "end_s": 2508.7
+          "placed_s": -79.6,
+          "start_s": -79.6,
+          "end_s": 2320.4
         },
         {
           "job": "notebook-00003",
           "replica": 0,
           "node": "l40s-001",
-          "placed_s": 708.7,
-          "start_s": 708.7,
-          "end_s": 2508.7
+          "placed_s": 520.4,
+          "start_s": 520.4,
+          "end_s": 2320.4
         },
         {
           "job": "notebook-00004",
           "replica": 0,
           "node": "l40s-001",
-          "placed_s": 1308.7,
-          "start_s": 1308.7,
-          "end_s": 4308.7
+          "placed_s": 1120.4,
+          "start_s": 1120.4,
+          "end_s": 4120.4
         },
         {
           "job": "notebook-00005",
           "replica": 0,
           "node": "l40s-001",
-          "placed_s": 1308.7,
-          "start_s": 1308.7,
-          "end_s": 2208.7
+          "placed_s": 1420.4,
+          "start_s": 1420.4,
+          "end_s": 2320.4
         },
         {
           "job": "notebook-00011",
           "replica": 0,
-          "node": "l40s-002",
-          "placed_s": 3108.7,
-          "start_s": 3108.7,
-          "end_s": 9408.7
+          "node": "l40s-001",
+          "placed_s": 2920.4,
+          "start_s": 2920.4,
+          "end_s": 9220.4
         },
         {
           "job": "notebook-00012",
           "replica": 0,
           "node": "l40s-002",
-          "placed_s": 3408.7,
-          "start_s": 3408.7,
-          "end_s": 4008.7
+          "placed_s": 3520.4,
+          "start_s": 3520.4,
+          "end_s": 4120.4
         },
         {
           "job": "training-00007",
           "replica": 0,
-          "node": "h100-001",
-          "placed_s": 9408.7,
-          "start_s": 9408.7,
-          "end_s": 18408.7
+          "node": "h100-000",
+          "placed_s": 9520.4,
+          "start_s": 9520.4,
+          "end_s": 18520.4
         },
         {
           "job": "training-00007",
           "replica": 1,
-          "node": "h100-000",
-          "placed_s": 9408.7,
-          "start_s": 9408.7,
-          "end_s": 18408.7
+          "node": "h100-001",
+          "placed_s": 9520.4,
+          "start_s": 9520.4,
+          "end_s": 18520.4
         }
       ]
     }
@@ -291,7 +291,7 @@
     "min_ratio": 1.0,
     "max_ratio": 1.0,
     "median_start_lag_s": 0.0,
-    "max_start_lag_s": 0.0,
+    "max_start_lag_s": 1.0,
     "ok": true,
     "reason": ""
   }

@@ -70,21 +70,23 @@ so pods of jobs submitted together interleave, and that's how half-placed gangs 
 
 ## How close is the model?
 
-Real-scheduler runs of all seven stacks ([results/cluster](../results/cluster/README.md); 12-job smoke trace, 32-GPU
-lab, kind + kwok, CI run 38889757797) against the model over 100 placement seeds:
+Real-scheduler runs of all seven stacks (12-job smoke trace, 32-GPU lab, kind + kwok; the 30 CI runs on `main` from
+16 October to 12 November, [results/cluster/repeats.md](../results/cluster/repeats.md)) against the model over 100
+placement seeds:
 
-| Stack | Model, median (range) | Real scheduler | Read |
+| Stack | Model, median (range) | Real scheduler, median (range) | Read |
 |---|---|---|---|
-| default | 10.3 h (6.9-10.6) | 7.8 h | inside the model's range; one random draw on each side |
-| Kueue v0.20.1 | 9.1 h (6.9-9.5) | 7.3 h | inside the range |
-| Volcano v1.16.0 | 9.5 h (6.9-9.5) | 9.9 h | within 4% of the median: small pods stack on one H100 node and hold the training gang back |
-| KAI 0.18.5 | 6.9 h | 7.3 h | +6% |
-| default-, kueue-, volcano-binpack | 6.9 h | 7.3 h each | +6% |
+| default | 10.3 h (6.9-10.6) | 7.8 h (7.3-7.8) | every run inside the model's range |
+| Kueue | 9.1 h (6.9-9.5) | 7.7 h (7.3-7.8) | every run inside the range |
+| Volcano v1.16.0 | 9.5 h (6.9-9.5) | 9.9 h (9.8-11.2) | median within 4%: small pods stack on an H100 node and hold the training gang back. The less common outcome (9 of 30 runs, 11.1 h), where the 8-GPU fine-tunes wait as well, is slower than any model seed |
+| KAI | 6.9 h | 7.3 h (7.3-7.4) | +6% |
+| default-, kueue-, volcano-binpack | 6.9 h | 7.3 h each (7.3-7.4) | +6% |
 
 Every stack that packs GPUs is 6% slower on the real control plane than in the model, consistently: that is
 scheduling and controller latency, which the model does not include. The stacks that place GPU pods without looking at
 GPUs vary from run to run, on the real scheduler as in the model, because their outcome depends on which nodes small
-pods happen to land on.
+pods happen to land on. On the real schedulers that variation takes the form of two outcomes rather than a spread:
+whether an inference pod lands on an H100 node decides every default-scheduler and Kueue run.
 
 Getting here took two harness fixes and a better Volcano model, each found by comparing placements rather than
 totals. The first runs disagreed by up to 84%. kwok's pod-create and pod-ready delays had idled every pod for 30 trace

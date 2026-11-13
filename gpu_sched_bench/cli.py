@@ -85,6 +85,12 @@ def _parser() -> argparse.ArgumentParser:
     sw.add_argument("--stacks", default="default,kueue,volcano,kai", help="Comma-separated stacks (default: all).")
     sw.add_argument("--quotas", choices=("equal", "none"), default="equal", help="Team quotas (default: equal).")
     sw.add_argument("--output", "-o", help="Write the sweep JSON here instead of stdout.")
+    rr = sub.add_parser("repeats", help="Summarise many cluster runs: median, range and how often each outcome happened.")
+    rr.add_argument("runs", help="Directory of downloaded CI runs: <run id>/**/cluster-*.json "
+                                 "(scripts/fetch-cluster-runs.sh fills it).")
+    rr.add_argument("--source", default="", help="A sentence saying where the runs came from, kept in the output.")
+    rr.add_argument("--output", "-o", help="Write the JSON here instead of stdout.")
+    rr.add_argument("--markdown", help="Also write the Markdown report here.")
     cl = sub.add_parser("cluster", help="Run a trace on a real cluster with kwok GPU nodes.")
     csub = cl.add_subparsers(dest="cluster_command", required=True)
     cr = csub.add_parser("run", help="Create kwok nodes, apply the stack's queues, replay the trace, collect results.")
@@ -232,6 +238,29 @@ def _cmd_sweep(args: argparse.Namespace) -> int:
               file=sys.stderr)
     else:
         print(text, end="")
+    return 0
+
+
+def _cmd_repeats(args: argparse.Namespace) -> int:
+    import json
+
+    from .repeats import build, collect, to_markdown
+    try:
+        rows, skipped = collect(Path(args.runs))
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"gsb: {exc}", file=sys.stderr)
+        return 2
+    for path in skipped:
+        print(f"gsb: skipped {path}: it failed its runtime check", file=sys.stderr)
+    doc = build(rows, args.source)
+    text = json.dumps(doc, indent=2) + "\n"
+    if args.output:
+        Path(args.output).write_text(text)
+    else:
+        print(text, end="")
+    if args.markdown:
+        Path(args.markdown).write_text(to_markdown(doc))
+    print(f"gsb: {len(doc['summary']['runs'])} runs, {len(rows)} stack results", file=sys.stderr)
     return 0
 
 
@@ -388,6 +417,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_cluster(args)
     if args.command == "sweep":
         return _cmd_sweep(args)
+    if args.command == "repeats":
+        return _cmd_repeats(args)
     if args.command == "ablate":
         return _cmd_ablate(args)
     if args.command == "compare":

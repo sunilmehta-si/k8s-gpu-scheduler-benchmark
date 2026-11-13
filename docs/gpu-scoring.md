@@ -27,14 +27,18 @@ is skipped), [`nodeorder.go`](https://github.com/volcano-sh/volcano/blob/v1.16.0
 ## What it looks like on a real cluster
 
 The same 12-job smoke trace (two 8-GPU H100 nodes, four 4-GPU L40S nodes), replayed on each real scheduler in CI
-([results/cluster](../results/cluster/README.md)). Where each pod ran:
+30 times ([results/cluster/repeats.md](../results/cluster/repeats.md); one run in detail in
+[results/cluster](../results/cluster/README.md)). Where each pod ran:
 
-- **Volcano, as installed:** every notebook and inference pod went to `h100-000`, the node with the most pods,
-  until it was full. The 16-GPU training gang needs both H100 nodes, so it waited for those inference pods to end,
-  about seven hours later.
-- **default kube-scheduler, as installed:** small pods landed on H100 and L40S nodes alike, at random.
-- **Volcano, default and Kueue configured to bin-pack GPUs:** every notebook and inference pod went to the L40S
-  nodes, and both H100 nodes stayed free for the 8-GPU fine-tunes and the training gang.
+- **Volcano, as installed:** in every run, notebook and inference pods went to an H100 node, stacked on the node
+  that already had the most. The 16-GPU training gang needs both H100 nodes, so it waited for those inference pods
+  to end, about seven hours. In 9 of the 30 runs small pods held GPUs on both H100 nodes, and the 8-GPU fine-tunes
+  waited as long.
+- **default kube-scheduler and Kueue, as installed:** small pods landed on H100 and L40S nodes alike. Whether an
+  inference pod landed on an H100 node decided the run: it did in 22 of 30 default-scheduler runs and 21 of 30 Kueue
+  runs, and each of those cost about $5.2 per useful GPU-hour; the others cost $4.2 and $4.0.
+- **Volcano, default and Kueue configured to bin-pack GPUs, and KAI:** every notebook and inference pod went to the
+  L40S nodes in all 30 runs, and both H100 nodes stayed free for the 8-GPU fine-tunes and the training gang.
 
 `gsb timeline` prints these placements from any cluster run, and `gsb compare` puts them next to the model's.
 

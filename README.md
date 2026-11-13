@@ -20,27 +20,40 @@ cpu and memory, so a GPU-only pod lands on any node that fits. Volcano's binpack
 without requests, so it stacks small pods on whichever node already has the most. One setting fixes each
 ([why, with sources, and the exact config](docs/gpu-scoring.md)).
 
-The same 12-job trace on the **real schedulers** (two 8-GPU H100 nodes, four 4-GPU L40S nodes; kind + kwok in CI,
-[results](results/cluster/README.md)):
+The same 12-job trace on the **real schedulers** (two 8-GPU H100 nodes, four 4-GPU L40S nodes; kind + kwok in CI).
+Medians of 30 runs; where a stack's runs split into two outcomes, the cost of each and how many runs it took
+([every run](results/cluster/repeats.md), [one run in detail](results/cluster/README.md)):
 
 | Real scheduler | Time to finish | Queue wait p95 | Cost per useful GPU-hour |
 |---|---|---|---|
-| default kube-scheduler | 7.8 h | 338 min | $5.25 |
-| default + GPU `MostAllocated` profile | **7.3 h** | 149 min | $4.19 |
-| Volcano v1.16.0 | 9.9 h | 391 min | $5.34 |
-| Volcano + `binpack.resources: nvidia.com/gpu` | **7.3 h** | **80 min** | **$3.97** |
-| Kueue v0.20.1 | 7.3 h | 100 min | $3.97 |
-| Kueue + GPU `MostAllocated` profile | 7.3 h | 120 min | $3.97 |
-| KAI Scheduler 0.18.5 | **7.3 h** | 81 min | **$3.97** |
+| default kube-scheduler | 7.8 h | 336 min | $5.23 in 22 runs, $4.21 in 8 |
+| default + GPU `MostAllocated` profile | 7.3 h | 145 min | $4.19 |
+| Volcano | 9.9 h | 391 min | $5.33 in 21 runs, $6.03 in 9 |
+| Volcano + `binpack.resources: nvidia.com/gpu` | 7.3 h | 78 min | $3.96 |
+| Kueue | 7.7 h | 269 min | $5.21 in 21 runs, $3.98 in 9 |
+| Kueue + GPU `MostAllocated` profile | 7.3 h | 120 min | $3.98 |
+| KAI Scheduler | 7.3 h | 80 min | $3.97 |
 
 What happened, from the recorded placements (`gsb timeline`):
 
-- **Volcano as installed** put every notebook and inference pod on one H100 node until it was full. The 16-GPU training
-  gang needs both H100 nodes, so it waited seven hours for those inference pods to end. Configured to score GPUs, it
-  put them all on the L40S nodes: **26% faster and 26% cheaper per useful GPU-hour**.
-- **The default scheduler** scattered small pods across H100 and L40S nodes alike, and the training gang started
-  2.5 hours later than with GPU-aware placement. A second scheduler profile cut its cost per useful GPU-hour by 20%.
-- **Kueue** gets most of the benefit from admitting whole workloads by quota; on this trace placement changed little.
+- **Scoring GPUs gives the same result every run.** KAI and the three stacks configured to bin-pack GPUs put every
+  notebook and inference pod on the L40S nodes in all 30 runs, which keeps both H100 nodes for the fine-tunes and the
+  training gang. Their cost moved by at most 4% between runs.
+- **As installed, the other three are a lottery.** One run shows one draw, which is how an earlier version of this
+  table came to put Kueue at $3.97: that was its less common outcome.
+- **Kueue** admits whole workloads by quota and leaves placement to the default scheduler, which scores cpu and
+  memory. In 21 of 30 runs an inference pod landed on an H100 node, so the 16-GPU training gang could place only one
+  of its two pods, which held a whole H100 node for 2.5 hours; the gang started at 5.1 h instead of 2.3 to 2.9 h.
+  Configured to bin-pack GPUs, Kueue cost a median $3.98 per useful GPU-hour and never more than $4.11, 23% less than
+  its median as installed.
+- **The default scheduler** draws the same lottery: in 22 of 30 runs an inference pod landed on an H100 node and the
+  training gang started 2.5 hours later than with GPU-aware placement. A second scheduler profile cut its median cost
+  per useful GPU-hour by 20%.
+- **Volcano as installed** put small pods on the H100 nodes in every run. In 21 of 30 runs the training gang, which
+  needs both H100 nodes, waited for the inference pods there to end and started about 7.1 h in. In the other 9, small
+  pods held GPUs on both H100 nodes, so the 8-GPU fine-tunes waited for them too, until 6.7 h or later: 11.1 h to
+  finish and $6.03 per useful GPU-hour. Configured to score GPUs, it put them all on the L40S nodes: **26% faster and
+  26% cheaper per useful GPU-hour** (medians).
 
 At fleet scale, in simulation (256 GPUs, 131 jobs per trace, [ten traces](results/sweep-mixed-256-tuned.md)), the
 saving is smaller but holds for every stack: GPU bin-packing lowers the mean cost per useful GPU-hour from $5.31 to
@@ -65,9 +78,10 @@ Three more things the numbers say:
 
 The [cluster workflow](.github/workflows/cluster.yml) installs each real scheduler on a kind cluster with
 [kwok](https://kwok.sigs.k8s.io/) GPU nodes on every push, replays the trace, and compares the result with the model
-job by job. Over 100 placement seeds, the model's median is within 4% of the real Volcano and inside the range of
-the real default scheduler and Kueue; the stacks that pack GPUs are a consistent 6% slower on the real control plane
-(7.3 h against 6.9 h), which is scheduling latency the model leaves out
+job by job. Over 100 placement seeds, the model's median is within 4% of the median of 30 real Volcano runs, and
+every real default-scheduler and Kueue run falls inside the model's range; Volcano's less common outcome (11.1 h)
+is slower than any of the model's seeds (9.5 h at most). The stacks that pack GPUs are a consistent 6%
+slower on the real control plane (7.3 h against 6.9 h), which is scheduling latency the model leaves out
 ([methodology](docs/methodology.md#how-close-is-the-model)).
 
 The runs check themselves: each pod's runtime against its expected runtime, and the time from being bound to a node
@@ -103,6 +117,7 @@ Needs Docker, kind, kubectl and Helm ([guide](docs/cluster-runs.md)):
 make cluster STACK=kai          # kind + kwok, install KAI, replay the smoke trace, compare with the model
 make cluster STACK=volcano-binpack   # or any tuned variant: default-binpack, kueue-binpack
 gsb timeline cluster-kai.json --stack kai   # which job held which node, and when
+scripts/fetch-cluster-runs.sh runs && gsb repeats runs --markdown repeats.md -o repeats.json  # every CI run, per stack
 make versions                   # which pin has a newer release upstream, and whether the kind node image is one the pinned kind built
 ```
 
