@@ -68,7 +68,7 @@ to `main` and weekly: the four as installed, and default, Kueue and Volcano conf
 with its per-job table, and both timelines to the job summary. It uploads both results files and the raw evidence:
 pod objects, events and scheduler logs. Versions are pinned in [`cluster/versions.env`](../cluster/versions.env), which the scripts and the
 cluster workflow read: kind v0.33.0 with the Kubernetes v1.37.0 node image by digest, kwok v0.8.0, Kueue v0.20.4,
-Volcano v1.16.0, KAI Scheduler 0.18.6; the GPU bin-packing kube-scheduler matches the cluster's version. To try
+Volcano v1.16.0, KAI Scheduler 0.18.7; the GPU bin-packing kube-scheduler matches the cluster's version. To try
 another release locally, set the variable, for example `KAI_VERSION=0.18.7 scripts/install-kai.sh`.
 
 `gsb versions` (or `make versions`) compares each pin with the latest upstream release and says how far behind

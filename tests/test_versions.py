@@ -137,7 +137,7 @@ class ReportTests(unittest.TestCase):
     def test_every_component_has_a_pin_in_versions_env(self):
         pins = read_pins()
         self.assertEqual(set(COMPONENTS) - set(pins), set())
-        self.assertEqual(pins["KAI_VERSION"], "0.18.6")
+        self.assertEqual(pins["KAI_VERSION"], "0.18.7")
 
     def test_every_pin_is_compared_or_says_why_not(self):
         # a new line in versions.env has to be mapped to the repository that releases it, or listed with its reason
