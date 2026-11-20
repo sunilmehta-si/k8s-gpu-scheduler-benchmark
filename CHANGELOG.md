@@ -32,6 +32,9 @@
 - The cluster workflow installs KAI Scheduler 0.18.7 (was 0.18.6; published 2 Nov, adoptable from 16 Nov). Its notes
   keep GPU reservations while a bind is retried and fix a binder panic on a GPU-sharing ConfigMap; nothing changes
   how it scores nodes. v0.19.0 waits until 25 Nov.
+- The cluster workflow installs Kueue v0.20.5 (was v0.20.4; published 5 Nov, adoptable from 19 Nov), a patch release
+  of bug fixes in the 0.20 line, with quieter job reconciler and webhook logs and no security fixes; v0.20.6 waits
+  until 26 Nov.
 - The cluster workflow installs Kueue v0.20.4 (was v0.20.3; published 29 Oct, adoptable from 12 Nov). Its notes
   change Kueue's scheduler log messages and levels; the runs collect those logs but nothing here parses them.
 - Pull requests are reviewed with the code review tool at v0.9.0.
