@@ -29,6 +29,11 @@
   aged, holding back a fix that was ready. `--json` adds `adoptable_now`, `ready` and `ready_published`.
 
 ### Changed
+- The cluster workflow installs KAI Scheduler 0.19.0 (was 0.18.7; published 11 Nov, adoptable from 25 Nov), a minor
+  release. Of what touches these runs, it scores and sorts a task's nodes without per-worker score maps (a change in how
+  scores are kept; the cluster runs on the pull request check the placements) and lets pods that tolerate
+  node.kubernetes.io/unschedulable onto cordoned nodes; the runs cordon no node. Its Helm chart tags still have no
+  leading v. No security fixes.
 - The cluster workflow installs Kueue v0.20.6 (was v0.20.5; published 12 Nov, adoptable from 26 Nov), a patch release
   of bug fixes in the 0.20 line: among them a watch cache the API server failed to build after an upgrade to 0.20, and
   every pending Workload requeued on any RuntimeClass change. No security fixes; v0.20.7 waits until 3 Dec.
