@@ -29,6 +29,9 @@
   aged, holding back a fix that was ready. `--json` adds `adoptable_now`, `ready` and `ready_published`.
 
 ### Changed
+- The cluster workflow installs Kueue v0.20.6 (was v0.20.5; published 12 Nov, adoptable from 26 Nov), a patch release
+  of bug fixes in the 0.20 line: among them a watch cache the API server failed to build after an upgrade to 0.20, and
+  every pending Workload requeued on any RuntimeClass change. No security fixes; v0.20.7 waits until 3 Dec.
 - The cluster workflow installs KAI Scheduler 0.18.7 (was 0.18.6; published 2 Nov, adoptable from 16 Nov). Its notes
   keep GPU reservations while a bind is retried and fix a binder panic on a GPU-sharing ConfigMap; nothing changes
   how it scores nodes. v0.19.0 waits until 25 Nov.
